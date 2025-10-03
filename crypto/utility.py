@@ -39,3 +39,11 @@ def unpad(data: bytes, block_size: int, padding: PaddingMode) -> bytes:
     if padding == PaddingMode.ISO_10126:
         return data[:-pad_len]
     raise ValueError("Not implemented")
+
+
+def xor_bytes(a: bytes, b: bytes) -> bytes:
+    return bytes(x ^ y for x, y in zip(a, b))
+
+
+def split_blocks(data: bytes, block_size: int) -> list:
+    return [data[i:i + block_size] for i in range(0, len(data), block_size)]
