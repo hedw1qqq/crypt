@@ -24,8 +24,8 @@ def bitperm(
     num_output_bits = len(p_block)
     num_output_bytes = (num_output_bits + 7) // 8
 
-    padding = num_output_bytes * 8 - num_output_bits
-    result_integer <<= padding
+    # padding = num_output_bytes * 8 - num_output_bits
+    # result_integer <<= padding
 
     return result_integer.to_bytes(num_output_bytes, byteorder='big')
 
