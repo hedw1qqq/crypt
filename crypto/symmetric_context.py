@@ -1,6 +1,6 @@
 import asyncio
 from modes import PaddingMode, CipherMode
-from utility import xor_bytes, split_blocks, pad, unpad
+from utility import xor_bytes, split_blocks, pad, unpad, swap
 from typing import Optional, Tuple, Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 
@@ -25,7 +25,7 @@ class SymmetricCipherContext:
         self.padding = padding
         self.iv = iv
         self.mode_args = mode_args or ()
-        self.block_size = getattr(primitive, "block_size", None)
+        self.block_size = getattr(primitive, "block_size")
         if self.block_size is None:
             raise ValueError("Primitive must have attribute block_size (bytes).")
         if hasattr(self.primitive, "set_key"):
@@ -100,28 +100,95 @@ class SymmetricCipherContext:
         joined = b"".join(results)
         return unpad(joined, self.block_size, self.padding)
 
-    # CBC: C_i = E(P_i XOR C_{i-1}), C_0 = E(P_0 XOR IV)
+    #   C_i = E(P_i XOR C_{i-1}),   C_0 = IV
+    #   P_i = D(C_i) XOR C_{i-1}
+
     def _encrypt_cbc(self, data: bytes) -> bytes:
         padded = pad(data, self.block_size, self.padding)
         iv = self.iv if self.iv else secrets.token_bytes(self.block_size)
-        blocks = split_blocks(padded, self.block_size)
-        prev = iv
-        out = []
-        for block in blocks:
-            x = xor_bytes(block, prev)
-            c = self.primitive.encrypt_block(x)
-            out.append(c)
-            prev = c
-        return iv + b''.join(out)
+        blocks = split_blocks(padded, self.block_size)  # список P_i
+        prev_cipher = iv
+        ciphertext = []
+
+        for P_i in blocks:
+            x = xor_bytes(P_i, prev_cipher)
+            C_i = self.primitive.encrypt_block(x)
+            ciphertext.append(C_i)
+            prev_cipher = C_i
+        return iv + b''.join(ciphertext)
 
     def _decrypt_cbc(self, data: bytes) -> bytes:
         iv = data[:self.block_size]
-        blocks = split_blocks(data[self.block_size:], self.block_size)
-        prev = iv
-        out = []
-        for c in blocks:
-            x = self.primitive.decrypt_block(c)
-            p = xor_bytes(x, prev)
-            out.append(p)
-            prev = c
-        return unpad(b''.join(out), self.block_size, self.padding)
+        blocks = split_blocks(data[self.block_size:], self.block_size)  # список C_i
+        prev_cipher = iv
+        plaintext = []
+        for C_i in blocks:
+            x = self.primitive.decrypt_block(C_i)
+            P_i = xor_bytes(x, prev_cipher)
+            plaintext.append(P_i)
+            prev_cipher = C_i
+
+        return unpad(b''.join(plaintext), self.block_size, self.padding)
+
+    #   C_i = E(P_i XOR P_{i-1} XOR C_{i-1}),   P_{-1}=0, C_0=IV
+    #   P_i = D(C_i) XOR P_{i-1} XOR C_{i-1}
+
+    def _encrypt_pcbc(self, data: bytes) -> bytes:
+        padded = pad(data, self.block_size, self.padding)
+        iv = self.iv if self.iv else secrets.token_bytes(self.block_size)
+        blocks = split_blocks(padded, self.block_size)
+        prev_cipher = iv
+        prev_plain = b'\x00' * self.block_size
+        ciphertext = []
+        for P_i in blocks:
+            x = xor_bytes(P_i, xor_bytes(prev_plain, prev_cipher))
+            C_i = self.primitive.encrypt_block(x)
+            ciphertext.append(C_i)
+            prev_plain, prev_cipher = P_i, C_i
+        return iv + b''.join(ciphertext)
+
+    def _decrypt_pcbc(self, data: bytes) -> bytes:
+        if len(data) < self.block_size or (len(data) - self.block_size) % self.block_size != 0:
+            raise ValueError("Invalid ciphertext for PCBC")
+        iv = data[:self.block_size]
+        blocks = split_blocks(data[self.block_size:], self.block_size)  # C_i
+        prev_cipher = iv
+        prev_plain = b'\x00' * self.block_size
+        plaintext = []
+        for C_i in blocks:
+            x = self.primitive.decrypt_block(C_i)
+            P_i = xor_bytes(x, xor_bytes(prev_plain, prev_cipher))
+            plaintext.append(P_i)
+            prev_plain, prev_cipher = P_i, C_i
+
+        return unpad(b''.join(plaintext), self.block_size, self.padding)
+
+    #   C_i = P_i XOR E(C_{i-1}),   C_0 = P_0 XOR E(IV)
+    #   P_i = C_i XOR E(C_{i-1})
+
+    def _encrypt_cfb(self, data: bytes) -> bytes:
+        padded = pad(data, self.block_size, self.padding)
+        iv = self.iv if self.iv else secrets.token_bytes(self.block_size)
+        blocks = split_blocks(padded, self.block_size)
+        prev_cipher = iv
+        ciphertext = []
+        for P_i in blocks:
+            S_i = self.primitive.encrypt_block(prev_cipher)
+            C_i = xor_bytes(P_i, S_i)
+            ciphertext.append(C_i)
+            prev_cipher = C_i
+        return iv + b''.join(ciphertext)
+
+    def _decrypt_cfb(self, data: bytes) -> bytes:
+        if len(data) < self.block_size or len(data) % self.block_size != 0:
+            raise ValueError("Invalid ciphertext length for CFB")
+        iv = data[:self.block_size]
+        blocks = split_blocks(data[self.block_size:], self.block_size)  # C_i
+        prev_cipher = iv
+        plaintext = []
+        for C_i in blocks:
+            S_i = self.primitive.encrypt_block(prev_cipher)
+            P_i = xor_bytes(C_i, S_i)
+            plaintext.append(P_i)
+            prev_cipher = C_i
+        return unpad(b''.join(plaintext), self.block_size, self.padding)

@@ -47,3 +47,10 @@ def xor_bytes(a: bytes, b: bytes) -> bytes:
 
 def split_blocks(data: bytes, block_size: int) -> list:
     return [data[i:i + block_size] for i in range(0, len(data), block_size)]
+
+
+def swap(a, b):
+    a = a ^ b
+    b = a ^ b
+    a = a ^ b
+    return a, b
