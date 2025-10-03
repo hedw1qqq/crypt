@@ -83,8 +83,8 @@ class SymmetricCipherContext:
         raise NotImplementedError(f"Mode {self.mode} not implemented")
 
     def _encrypt_ecb(self, data: bytes) -> bytes:
-        blocks = split_blocks(data, self.block_size)
         padded = pad(data, self.block_size, self.padding)
+        blocks = split_blocks(padded, self.block_size)
         loop = asyncio.get_running_loop()
         try:
             results = list(self._executor.map(self.primitive.encrypt_block, blocks))
@@ -99,3 +99,17 @@ class SymmetricCipherContext:
         results = list(self._executor.map(self.primitive.decrypt_block, blocks))
         joined = b"".join(results)
         return unpad(joined, self.block_size, self.padding)
+
+    # CBC: C_i = E(P_i XOR C_{i-1}), C_0 = E(P_0 XOR IV)
+    def _encrypt_cbc(self, data: bytes) -> bytes:
+        padded = pad(data, self.block_size, self.padding)
+        iv = self.iv if self.iv else secrets.token_bytes(self.block_size)
+        blocks = split_blocks(padded, self.block_size)
+        prev = iv
+        out = []
+        for block in blocks:
+            x = xor_bytes(block, prev)
+            c = self.primitive.encrypt_block(x)
+            out.append(c)
+            prev = c
+        return b''.join(out)
