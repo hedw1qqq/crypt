@@ -1,4 +1,7 @@
 import asyncio
+
+from pandas.core.internals import blocks
+
 from modes import PaddingMode, CipherMode
 from utility import xor_bytes, split_blocks, pad, unpad, swap
 from typing import Optional, Tuple, Callable, Iterable
@@ -183,12 +186,70 @@ class SymmetricCipherContext:
         if len(data) < self.block_size or len(data) % self.block_size != 0:
             raise ValueError("Invalid ciphertext length for CFB")
         iv = data[:self.block_size]
-        blocks = split_blocks(data[self.block_size:], self.block_size)  # C_i
+        blocks = split_blocks(data[self.block_size:], self.block_size)
         prev_cipher = iv
-        plaintext = []
+        out = []
         for C_i in blocks:
             S_i = self.primitive.encrypt_block(prev_cipher)
             P_i = xor_bytes(C_i, S_i)
-            plaintext.append(P_i)
+            out.append(P_i)
             prev_cipher = C_i
-        return unpad(b''.join(plaintext), self.block_size, self.padding)
+        return unpad(b''.join(out), self.block_size, self.padding)
+
+    def _encrypt_ofb(self, data: bytes) -> bytes:
+        padded = pad(data, self.block_size, self.padding)
+        iv = self.iv if self.iv else secrets.token_bytes(self.block_size)
+        S_prev = iv
+        blocks = split_blocks(padded, self.block_size)
+        out = []
+        for P_i in blocks:
+            S_i = self.primitive.encrypt_block(S_prev)
+            c = xor_bytes(P_i, S_i)
+            out.append(c)
+            S_prev = S_i
+        return iv + b''.join(out)
+
+    def _decrypt_ofb(self, data: bytes) -> bytes:
+        if len(data) < self.block_size or len(data) % self.block_size != 0:
+            raise ValueError("Invalid ciphertext length for OFB")
+        iv = data[:self.block_size]
+        blocks = split_blocks(data[self.block_size:], self.block_size)
+        S_prev = iv
+        out = []
+        for C_i in blocks:
+            S_i = self.primitive.encrypt_block(S_prev)
+            p = xor_bytes(C_i, S_i)
+            out.append(p)
+            S_prev = S_i
+        return unpad(b''.join(out), self.block_size, self.padding)
+
+    def _encrypt_ctr(self, data: bytes) -> bytes:
+        iv = self.iv if self.iv else secrets.token_bytes(self.block_size)
+        blocks = split_blocks(data, self.block_size)
+        counter = int.from_bytes(iv, byteorder='big')
+
+        def process_block(args):
+            i, P_i = args
+            ctr_block = (counter + i).to_bytes(self.block_size, byteorder='big')
+            keystream = self.primitive.encrypt_block(ctr_block)
+            return xor_bytes(P_i, keystream[:len(P_i)])
+
+        results = list(self._executor.map(process_block, enumerate(blocks)))
+        return iv + b''.join(results)
+
+    def _decrypt_ctr(self, data: bytes) -> bytes:
+        if len(data) < self.block_size:
+            raise ValueError("Ciphertext too short for CTR mode")
+        iv = data[:self.block_size]
+        ciphertext = data[self.block_size:]
+        blocks = split_blocks(ciphertext, self.block_size)
+        counter = int.from_bytes(iv, byteorder='big')
+
+        def process_block(args):
+            i, C_i = args
+            ctr_block = (counter + i).to_bytes(self.block_size, byteorder='big')
+            keystream = self.primitive.encrypt_block(ctr_block)
+            return xor_bytes(C_i, keystream[:len(C_i)])
+
+        results = list(self._executor.map(process_block, enumerate(blocks)))
+        return b''.join(results)
