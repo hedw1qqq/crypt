@@ -224,32 +224,48 @@ class SymmetricCipherContext:
         return unpad(b''.join(out), self.block_size, self.padding)
 
     def _encrypt_ctr(self, data: bytes) -> bytes:
-        iv = self.iv if self.iv else secrets.token_bytes(self.block_size)
+        # C_j = P_j XOR E_K(T_j)
+        nonce = self.iv if self.iv else secrets.token_bytes(self.block_size)
         blocks = split_blocks(data, self.block_size)
-        counter = int.from_bytes(iv, byteorder='big')
+        initial_counter = int.from_bytes(nonce, byteorder='big')
 
         def process_block(args):
-            i, P_i = args
-            ctr_block = (counter + i).to_bytes(self.block_size, byteorder='big')
-            keystream = self.primitive.encrypt_block(ctr_block)
-            return xor_bytes(P_i, keystream[:len(P_i)])
+            j, P_j = args
+            # T_j = nonce || counter
+            # mod 2^(block_size*8)
+            T_j = ((initial_counter + j) % (2 ** (self.block_size * 8))).to_bytes(
+                self.block_size, byteorder='big'
+            )
+            # O_j = C(T_j)
+            O_j = self.primitive.encrypt_block(T_j)
+            # C_j = P_j XOR O_j (для последнего блока берем только нужную длину)
+            return xor_bytes(P_j, O_j[:len(P_j)])
 
         results = list(self._executor.map(process_block, enumerate(blocks)))
-        return iv + b''.join(results)
+        return nonce + b''.join(results)
 
     def _decrypt_ctr(self, data: bytes) -> bytes:
+        #  P_j = C_j XOR E_K(T_j)
+
         if len(data) < self.block_size:
             raise ValueError("Ciphertext too short for CTR mode")
-        iv = data[:self.block_size]
+
+        nonce = data[:self.block_size]
         ciphertext = data[self.block_size:]
         blocks = split_blocks(ciphertext, self.block_size)
-        counter = int.from_bytes(iv, byteorder='big')
+
+        initial_counter = int.from_bytes(nonce, byteorder='big')
 
         def process_block(args):
-            i, C_i = args
-            ctr_block = (counter + i).to_bytes(self.block_size, byteorder='big')
-            keystream = self.primitive.encrypt_block(ctr_block)
-            return xor_bytes(C_i, keystream[:len(C_i)])
+            j, C_j = args
+            # T_j = nonce || counter
+            T_j = ((initial_counter + j) % (2 ** (self.block_size * 8))).to_bytes(
+                self.block_size, byteorder='big'
+            )
+            # O_j = C(T_j)
+            O_j = self.primitive.encrypt_block(T_j)
+            # P_j = C_j XOR O_j
+            return xor_bytes(C_j, O_j[:len(C_j)])
 
         results = list(self._executor.map(process_block, enumerate(blocks)))
         return b''.join(results)
