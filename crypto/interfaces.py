@@ -15,11 +15,11 @@ class IRoundFunction(ABC):
 
 class ISymmetricCipher(ABC):
     @abstractmethod
-    def encrypt_block(self, block: bytes, round_key: bytes) -> bytes:
+    def encrypt_block(self, block: bytes) -> bytes:
         pass
 
     @abstractmethod
-    def decrypt_block(self, block: bytes, round_key: bytes) -> bytes:
+    def decrypt_block(self, block: bytes) -> bytes:
         pass
 
     @abstractmethod

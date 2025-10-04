@@ -1,7 +1,5 @@
 import asyncio
 
-from pandas.core.internals import blocks
-
 from modes import PaddingMode, CipherMode
 from utility import xor_bytes, split_blocks, pad, unpad, swap
 from typing import Optional, Tuple, Callable, Iterable
@@ -31,8 +29,8 @@ class SymmetricCipherContext:
         self.block_size = getattr(primitive, "block_size")
         if self.block_size is None:
             raise ValueError("Primitive must have attribute block_size (bytes).")
-        if hasattr(self.primitive, "set_key"):
-            self.primitive.set_key(key)
+        if hasattr(self.primitive, "setup_keys"):
+            self.primitive.setup_keys(key)
         self._executor = ThreadPoolExecutor(max_workers=max_workers or (os.cpu_count() or 4))
 
     async def encrypt_bytes(self, data: bytes) -> bytes:
@@ -43,13 +41,41 @@ class SymmetricCipherContext:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(self._executor, self._decrypt_sync, data)
 
-    async def encrypt_file(self, input_path: str, output_path: str, chunk_size: int = 1024 * 1024):
+    async def encrypt_file(self, input_path: str, output_path: str):
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(self._executor, self._encrypt_file_sync, input_path, output_path, chunk_size)
+        await loop.run_in_executor(self._executor, self._encrypt_file_sync, input_path, output_path)
+        print(f"File encrypted successfully: {input_path} -> {output_path}")
 
-    async def decrypt_file(self, input_path: str, output_path: str, chunk_size: int = 1024 * 1024):
+    async def decrypt_file(self, input_path: str, output_path: str):
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(self._executor, self._decrypt_file_sync, input_path, output_path, chunk_size)
+        await loop.run_in_executor(self._executor, self._decrypt_file_sync, input_path, output_path)
+        print(f"File decrypted successfully: {input_path} -> {output_path}")
+
+    def _encrypt_file_sync(self, input_path: str, output_path: str):
+        try:
+            with open(input_path, 'rb') as f_in:
+                plaintext = f_in.read()
+
+            ciphertext = self._encrypt_sync(plaintext)
+
+            with open(output_path, 'wb') as f_out:
+                f_out.write(ciphertext)
+        except FileNotFoundError:
+            print(f"Error: Input file not found at {input_path}")
+        except Exception as e:
+            print(f"An error occurred during file encryption: {e}")
+
+    def _decrypt_file_sync(self, input_path: str, output_path: str):
+        try:
+            with open(input_path, 'rb') as f_in:
+                ciphertext = f_in.read()
+            plaintext = self._decrypt_sync(ciphertext)
+            with open(output_path, 'wb') as f_out:
+                f_out.write(plaintext)
+        except FileNotFoundError:
+            print(f"Error: Input file not found at {input_path}")
+        except Exception as e:
+            print(f"An error occurred during file decryption: {e}")
 
     def _encrypt_sync(self, data: bytes) -> bytes:
         match self.mode:
