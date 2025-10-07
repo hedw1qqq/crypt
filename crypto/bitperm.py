@@ -24,13 +24,14 @@ def bitperm(
     num_output_bits = len(p_block)
     num_output_bytes = (num_output_bits + 7) // 8
 
-    # padding = num_output_bytes * 8 - num_output_bits
-    # result_integer <<= padding
+    padding = num_output_bytes * 8 - num_output_bits
+    result_integer <<= padding
 
     return result_integer.to_bytes(num_output_bytes, byteorder='big')
 
+
 data = b'\x07'  # 00000111
-p_block = [1,7,6,5,4,3,2,1]
+p_block = [1, 7, 6, 5, 4, 3, 2, 1]
 
 result = bitperm(data, p_block, msb_first=True, one_based_indexing=True)
 
