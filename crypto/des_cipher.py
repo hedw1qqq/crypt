@@ -5,7 +5,6 @@ from utility import xor_bytes
 
 
 class DESKeySchedule(IKeySchedule):
-
     # PC-1
     PC1 = [
         57, 49, 41, 33, 25, 17, 9,
@@ -33,14 +32,27 @@ class DESKeySchedule(IKeySchedule):
     SHIFTS = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
 
     def expand_key(self, master_key: bytes) -> list[bytes]:
-        """Генерация 16 раундовых ключей по 48 бит."""
-        # TODO: Реализовать расширение ключа
-        pass
+        if len(master_key) != 8:
+            raise ValueError("DES key must be 8 bytes (64 bits)")
+
+        permuted_key = bitperm(master_key, self.PC1, msb_first=True)
+        key_int = int.from_bytes(permuted_key, 'big')
+        C = (key_int >> 28) & 0x0FFFFFFF
+        D = key_int & 0x0FFFFFFF
+        round_keys = []
+        for i in range(16):
+            C = self._rotate_left_28(C, self.SHIFTS[i])
+            D = self._rotate_left_28(D, self.SHIFTS[i])
+
+            CD = ((C << 28) | D).to_bytes(7, 'big')
+
+            round_key = bitperm(CD, self.PC2, msb_first=True)
+            round_keys.append(round_key)
+
+        return round_keys
 
     def _rotate_left_28(self, value: int, shifts: int) -> int:
-        """Циклический сдвиг влево для 28-битного значения."""
-        # TODO: Реализовать циклический сдвиг
-        pass
+        return ((value << shifts) | (value >> (28 - shifts))) & 0x0FFFFFFF
 
 
 class DESRoundFunction(IRoundFunction):
@@ -132,12 +144,31 @@ class DESRoundFunction(IRoundFunction):
 
     def apply(self, half_block: bytes, round_key: bytes) -> bytes:
         """ f(R, K) = P(S(E(R) ⊕ K))."""
-        # TODO: Реализовать раундовую функцию
-        pass
+        if len(half_block) != 4:
+            raise ValueError("Half block must be 4 bytes (32 bits)")
+        if len(round_key) != 6:
+            raise ValueError("Round key must be 6 bytes (48 bits)")
+        expanded = bitperm(half_block, self.EXPANSION, msb_first=True)
+        xored = xor_bytes(expanded, round_key)
+        substituted = self._apply_sboxes(xored)
+        result = bitperm(substituted, self.P, msb_first=True)
+        return result
 
     def _apply_sboxes(self, data: bytes) -> bytes:
-        # TODO: Реализовать S-boxes
-        pass
+        if len(data) != 6:
+            raise ValueError("Data must be 6 bytes (48 bits)")
+        bits = int.from_bytes(data, 'big')
+        result = 0
+        for i in range(8):
+            sbox_input = (bits >> (42 - i * 6)) & 0b111111
+            bit_5 = (sbox_input & 0b100000) >> 4
+            bit_0 = sbox_input & 0b000001
+            row = bit_5 | bit_0
+            col = (sbox_input >> 1) & 0b001111  # средние 4 бита
+            sbox_value = self.SBOXES[i][row][col]
+            result = (result << 4) | sbox_value
+
+        return result.to_bytes(4, 'big')
 
 
 class DES(FeistelCipher):
@@ -166,7 +197,6 @@ class DES(FeistelCipher):
     ]
 
     def __init__(self):
-        """Конструктор DES."""
         key_schedule = DESKeySchedule()
         round_function = DESRoundFunction()
 
@@ -185,10 +215,30 @@ class DES(FeistelCipher):
         3. Swap: R16L16
         4. FP
         """
-        # TODO: Реализовать шифрование с IP, Feistel, swap, FP
-        pass
+        if len(block) != 8:
+            raise ValueError("Block must be 8 bytes (64 bits)")
+        permuted = bitperm(block, self.IP, msb_first=True)
+        feistel_output = super().encrypt_block(permuted)
+        L16 = feistel_output[:4]
+        R16 = feistel_output[4:]
+        preoutput = R16 + L16
+
+        ciphertext = bitperm(preoutput, self.FP, msb_first=True)
+
+        return ciphertext
 
     def decrypt_block(self, block: bytes) -> bytes:
-        """Дешифрование блока DES."""
-        # TODO: Реализовать дешифрование
-        pass
+        if len(block) != 8:
+            raise ValueError("Block must be 8 bytes (64 bits)")
+
+        # Те же операции, но Feistel использует ключи в обратном порядке
+        permuted = bitperm(block, self.IP, msb_first=True)
+        feistel_output = super().decrypt_block(permuted)
+
+        L16 = feistel_output[:4]
+        R16 = feistel_output[4:]
+        preoutput = R16 + L16
+
+        plaintext = bitperm(preoutput, self.FP, msb_first=True)
+
+        return plaintext
