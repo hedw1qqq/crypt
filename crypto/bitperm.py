@@ -2,10 +2,11 @@ def bitperm(
         data: bytes,
         p_block: list[int],
         msb_first: bool = True,
-        one_based_indexing: bool = False
+        one_based_indexing: bool = True
 ) -> bytes:
     total_bits = len(data) * 8
     result_integer = 0
+
     for i in p_block:
         src_idx = i - 1 if one_based_indexing else i
         if not (0 <= src_idx < total_bits):
@@ -34,6 +35,3 @@ data = b'\x07'  # 00000111
 p_block = [1, 7, 6, 5, 4, 3, 2, 1]
 
 result = bitperm(data, p_block, msb_first=True, one_based_indexing=True)
-
-print("Исходные данные :", bin(data[0])[2:].zfill(8))
-print("После перестановки:", bin(result[0])[2:].zfill(8))

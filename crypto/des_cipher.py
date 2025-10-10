@@ -3,9 +3,10 @@ from feistel_cipher import FeistelCipher
 from bitperm import bitperm
 from utility import xor_bytes
 
+MASK_28_BITS = (1 << 28) - 1
+
 
 class DESKeySchedule(IKeySchedule):
-    # PC-1
     PC1 = [
         57, 49, 41, 33, 25, 17, 9,
         1, 58, 50, 42, 34, 26, 18,
@@ -17,7 +18,6 @@ class DESKeySchedule(IKeySchedule):
         21, 13, 5, 28, 20, 12, 4
     ]
 
-    # PC-2
     PC2 = [
         14, 17, 11, 24, 1, 5,
         3, 28, 15, 6, 21, 10,
@@ -37,27 +37,23 @@ class DESKeySchedule(IKeySchedule):
 
         permuted_key = bitperm(master_key, self.PC1, msb_first=True)
         key_int = int.from_bytes(permuted_key, 'big')
-        C = (key_int >> 28) & 0x0FFFFFFF
-        D = key_int & 0x0FFFFFFF
+        C = (key_int >> 28) & MASK_28_BITS
+        D = key_int & MASK_28_BITS
         round_keys = []
+
         for i in range(16):
             C = self._rotate_left_28(C, self.SHIFTS[i])
             D = self._rotate_left_28(D, self.SHIFTS[i])
-
             CD = ((C << 28) | D).to_bytes(7, 'big')
-
             round_key = bitperm(CD, self.PC2, msb_first=True)
             round_keys.append(round_key)
-
         return round_keys
 
     def _rotate_left_28(self, value: int, shifts: int) -> int:
-        return ((value << shifts) | (value >> (28 - shifts))) & 0x0FFFFFFF
+        return ((value << shifts) | (value >> (28 - shifts))) & MASK_28_BITS
 
 
 class DESRoundFunction(IRoundFunction):
-    """Раундовая функция f для DES."""
-
     # E
     EXPANSION = [
         32, 1, 2, 3, 4, 5,
@@ -70,7 +66,6 @@ class DESRoundFunction(IRoundFunction):
         28, 29, 30, 31, 32, 1
     ]
 
-    # 8 S-boxes
     SBOXES = [
         # S1
         [
@@ -129,8 +124,6 @@ class DESRoundFunction(IRoundFunction):
             [2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11]
         ]
     ]
-
-    # P
     P = [
         16, 7, 20, 21,
         29, 12, 28, 17,
@@ -145,9 +138,9 @@ class DESRoundFunction(IRoundFunction):
     def apply(self, half_block: bytes, round_key: bytes) -> bytes:
         """ f(R, K) = P(S(E(R) ⊕ K))."""
         if len(half_block) != 4:
-            raise ValueError("Half block must be 4 bytes (32 bits)")
+            raise ValueError("Half block must be 4 bytes")
         if len(round_key) != 6:
-            raise ValueError("Round key must be 6 bytes (48 bits)")
+            raise ValueError("Round key must be 6 bytes")
         expanded = bitperm(half_block, self.EXPANSION, msb_first=True)
         xored = xor_bytes(expanded, round_key)
         substituted = self._apply_sboxes(xored)
@@ -156,9 +149,11 @@ class DESRoundFunction(IRoundFunction):
 
     def _apply_sboxes(self, data: bytes) -> bytes:
         if len(data) != 6:
-            raise ValueError("Data must be 6 bytes (48 bits)")
+            raise ValueError("Data must be 6 bytes")
+
         bits = int.from_bytes(data, 'big')
         result = 0
+
         for i in range(8):
             sbox_input = (bits >> (42 - i * 6)) & 0b111111
             bit_5 = (sbox_input & 0b100000) >> 4
@@ -231,7 +226,6 @@ class DES(FeistelCipher):
         if len(block) != 8:
             raise ValueError("Block must be 8 bytes (64 bits)")
 
-        # Те же операции, но Feistel использует ключи в обратном порядке
         permuted = bitperm(block, self.IP, msb_first=True)
         feistel_output = super().decrypt_block(permuted)
 

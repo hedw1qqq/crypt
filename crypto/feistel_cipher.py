@@ -37,7 +37,7 @@ class FeistelCipher(ISymmetricCipher):
             L_old = L
             L = R
             R = xor_bytes(L_old, self.round_function.apply(R, self.round_keys[i]))
-        return R + L
+        return L + R
 
     def decrypt_block(self, block: bytes) -> bytes:
         if len(block) != self.block_size:
@@ -45,8 +45,10 @@ class FeistelCipher(ISymmetricCipher):
         half_size = self.block_size // 2
         L = block[:half_size]
         R = block[half_size:]
+
         for i in range(self.num_rounds - 1, -1, -1):
-            R_old = R
-            R = L
-            L = xor_bytes(R_old, self.round_function.apply(L, self.round_keys[i]))
+            L_old = L
+            L = R
+            R = xor_bytes(L_old, self.round_function.apply(L, self.round_keys[i]))
+
         return L + R
