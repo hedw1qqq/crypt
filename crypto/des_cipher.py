@@ -136,7 +136,7 @@ class DESRoundFunction(IRoundFunction):
     ]
 
     def apply(self, half_block: bytes, round_key: bytes) -> bytes:
-        """ f(R, K) = P(S(E(R) ⊕ K))."""
+        """ f(R, K) = P(S(E(R) XOR K))."""
         if len(half_block) != 4:
             raise ValueError("Half block must be 4 bytes")
         if len(round_key) != 6:

@@ -26,7 +26,7 @@ class FeistelCipher(ISymmetricCipher):
 
     def encrypt_block(self, block: bytes) -> bytes:
         """
-        Формула: L_{i+1} = R_i, R_{i+1} = L_i ⊕ F(R_i, K_i)
+        Формула: L_{i+1} = R_i, R_{i+1} = L_i XOR F(R_i, K_i)
         """
         if len(block) != self.block_size:
             raise ValueError(f"Block size must be {self.block_size} bytes")
