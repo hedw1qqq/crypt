@@ -29,7 +29,7 @@ class DESKeySchedule(IKeySchedule):
         44, 49, 39, 56, 34, 53,
         46, 42, 50, 36, 29, 32
     ]
-
+    # fmt: on
     SHIFTS = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
 
     def expand_key(self, master_key: bytes) -> list[bytes]:
@@ -37,7 +37,7 @@ class DESKeySchedule(IKeySchedule):
             raise ValueError("DES key must be 8 bytes (64 bits)")
 
         permuted_key = bitperm(master_key, self.PC1, msb_first=True)
-        key_int = int.from_bytes(permuted_key, 'big')
+        key_int = int.from_bytes(permuted_key, "big")
         C = (key_int >> 28) & MASK_28_BITS
         D = key_int & MASK_28_BITS
         round_keys = []
@@ -45,7 +45,7 @@ class DESKeySchedule(IKeySchedule):
         for i in range(16):
             C = self._rotate_left_28(C, self.SHIFTS[i])
             D = self._rotate_left_28(D, self.SHIFTS[i])
-            CD = ((C << 28) | D).to_bytes(7, 'big')
+            CD = ((C << 28) | D).to_bytes(7, "big")
             round_key = bitperm(CD, self.PC2, msb_first=True)
             round_keys.append(round_key)
         return round_keys
@@ -137,7 +137,7 @@ class DESRoundFunction(IRoundFunction):
     ]
     # fmt: on
     def apply(self, half_block: bytes, round_key: bytes) -> bytes:
-        """ f(R, K) = P(S(E(R) XOR K))."""
+        """f(R, K) = P(S(E(R) XOR K))."""
         if len(half_block) != 4:
             raise ValueError("Half block must be 4 bytes")
         if len(round_key) != 6:
@@ -152,7 +152,7 @@ class DESRoundFunction(IRoundFunction):
         if len(data) != 6:
             raise ValueError("Data must be 6 bytes")
 
-        bits = int.from_bytes(data, 'big')
+        bits = int.from_bytes(data, "big")
         result = 0
 
         for i in range(8):
@@ -164,7 +164,7 @@ class DESRoundFunction(IRoundFunction):
             sbox_value = self.SBOXES[i][row][col]
             result = (result << 4) | sbox_value
 
-        return result.to_bytes(4, 'big')
+        return result.to_bytes(4, "big")
 
 
 class DES(FeistelCipher):
@@ -191,7 +191,7 @@ class DES(FeistelCipher):
         34, 2, 42, 10, 50, 18, 58, 26,
         33, 1, 41, 9, 49, 17, 57, 25
     ]
-    #fmt: on
+    # fmt: on
     def __init__(self):
         key_schedule = DESKeySchedule()
         round_function = DESRoundFunction()
@@ -200,7 +200,7 @@ class DES(FeistelCipher):
             key_schedule=key_schedule,
             round_function=round_function,
             block_size=8,
-            num_rounds=16
+            num_rounds=16,
         )
 
     def encrypt_block(self, block: bytes) -> bytes:
