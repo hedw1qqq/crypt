@@ -169,7 +169,7 @@ class SymmetricCipherContext:
             case CipherMode.PCBC:
                 return self._encrypt_pcbc(data)
             case CipherMode.CFB:
-                return self._process_cfb(data, True)
+                return self._encrypt_cfb(data)
             case CipherMode.OFB:
                 return self._process_ofb(data, True)
             case CipherMode.CTR:
@@ -188,7 +188,7 @@ class SymmetricCipherContext:
             case CipherMode.PCBC:
                 return self._decrypt_pcbc(data)
             case CipherMode.CFB:
-                return self._process_cfb(data, False)
+                return self._decrypt_cfb(data)
             case CipherMode.OFB:
                 return self._process_ofb(data, False)
             case CipherMode.CTR:
