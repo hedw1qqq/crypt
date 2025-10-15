@@ -498,12 +498,12 @@ class SymmetricCipherContext:
         if encrypt:
             iv = self.iv if self.iv else secrets.token_bytes(bs)
             fout.write(iv)
-            state = iv
+            prev_cipher = iv
         else:
             iv = fin.read(bs)
             if len(iv) != bs:
                 raise ValueError("Ciphertext too short for CFB mode")
-            state = iv
+            prev_cipher = iv
 
         carry = b""
 
@@ -517,13 +517,13 @@ class SymmetricCipherContext:
             full, carry = data[:full_len], data[full_len:]
 
             for block in split_blocks(full, bs):
-                s = self.primitive.encrypt_block(state)
+                s = self.primitive.encrypt_block(prev_cipher)
                 output = xor_bytes(block, s)
                 fout.write(output)
-                state = output if encrypt else block
+                prev_cipher = output if encrypt else block
 
         if carry:
-            s = self.primitive.encrypt_block(state)
+            s = self.primitive.encrypt_block(prev_cipher)
             fout.write(xor_bytes(carry, s[: len(carry)]))
 
     def _process_cfb(self, data: bytes, encrypt: bool) -> bytes:
@@ -544,17 +544,17 @@ class SymmetricCipherContext:
         full_data = data[: full_blocks_count * bs]
         tail = data[full_blocks_count * bs :]
 
-        state = iv
+        prev_cipher = iv
         output = []
 
         for block in split_blocks(full_data, bs):
-            s = self.primitive.encrypt_block(state)
+            s = self.primitive.encrypt_block(prev_cipher)
             result = xor_bytes(block, s)
             output.append(result)
-            state = result if encrypt else block
+            prev_cipher = result if encrypt else block
 
         if tail:
-            s = self.primitive.encrypt_block(state)
+            s = self.primitive.encrypt_block(prev_cipher)
             output.append(xor_bytes(tail, s[: len(tail)]))
 
         result_data = b"".join(output)
@@ -570,12 +570,12 @@ class SymmetricCipherContext:
         if encrypt:
             iv = self.iv if self.iv else secrets.token_bytes(bs)
             fout.write(iv)
-            state = iv
+            prev_cipher = iv
         else:
             iv = fin.read(bs)
             if len(iv) != bs:
                 raise ValueError("Ciphertext too short for OFB mode")
-            state = iv
+            prev_cipher = iv
 
         carry = b""
 
@@ -589,12 +589,12 @@ class SymmetricCipherContext:
             full, carry = data[:full_len], data[full_len:]
 
             for block in split_blocks(full, bs):
-                state = self.primitive.encrypt_block(state)
-                fout.write(xor_bytes(block, state))
+                prev_cipher = self.primitive.encrypt_block(prev_cipher)
+                fout.write(xor_bytes(block, prev_cipher))
 
         if carry:
-            state = self.primitive.encrypt_block(state)
-            fout.write(xor_bytes(carry, state[: len(carry)]))
+            prev_cipher = self.primitive.encrypt_block(prev_cipher)
+            fout.write(xor_bytes(carry, prev_cipher[: len(carry)]))
 
     def _process_ofb(self, data: bytes, encrypt: bool) -> bytes:
         """
@@ -614,16 +614,16 @@ class SymmetricCipherContext:
         full_data = data[: full_blocks_count * bs]
         tail = data[full_blocks_count * bs :]
 
-        state = iv
+        prev_cipher = iv
         output = []
 
         for block in split_blocks(full_data, bs):
-            state = self.primitive.encrypt_block(state)
-            output.append(xor_bytes(block, state))
+            prev_cipher = self.primitive.encrypt_block(prev_cipher)
+            output.append(xor_bytes(block, prev_cipher))
 
         if tail:
-            state = self.primitive.encrypt_block(state)
-            output.append(xor_bytes(tail, state[: len(tail)]))
+            prev_cipher = self.primitive.encrypt_block(prev_cipher)
+            output.append(xor_bytes(tail, prev_cipher[: len(tail)]))
 
         result_data = b"".join(output)
         return (iv + result_data) if encrypt else result_data
