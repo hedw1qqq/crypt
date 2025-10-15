@@ -42,23 +42,25 @@ class SymmetricCipherContext:
         self._validate_iv()
 
     def _validate_iv(self):
+        if self.iv is None:
+            return
         if self.mode in (
             CipherMode.CBC,
             CipherMode.PCBC,
             CipherMode.CFB,
             CipherMode.OFB,
         ):
-            if self.iv is not None and len(self.iv) != self.block_size:
+            if len(self.iv) != self.block_size:
                 raise ValueError(
                     f"IV must be {self.block_size} bytes for {self.mode.name} mode"
                 )
         elif self.mode == CipherMode.CTR:
-            if self.iv is not None and len(self.iv) != self.block_size // 2:
+            if len(self.iv) != self.block_size // 2:
                 raise ValueError(
                     f"IV (nonce) must be {self.block_size // 2} bytes for CTR mode"
                 )
         elif self.mode == CipherMode.RANDOM_DELTA:
-            if self.iv is not None and len(self.iv) != self.block_size:
+            if len(self.iv) != self.block_size:
                 raise ValueError(
                     f"IV must be {self.block_size} bytes for RANDOM_DELTA mode"
                 )
