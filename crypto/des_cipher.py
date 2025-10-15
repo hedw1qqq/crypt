@@ -36,7 +36,9 @@ class DESKeySchedule(IKeySchedule):
         if len(master_key) != 8:
             raise ValueError("DES key must be 8 bytes (64 bits)")
 
-        permuted_key = bitperm(master_key, self.PC1, msb_first=True)
+        permuted_key = bitperm(
+            master_key, self.PC1, msb_first=True, one_based_indexing=True
+        )
         key_int = int.from_bytes(permuted_key, "big")
         C = (key_int >> 28) & MASK_28_BITS
         D = key_int & MASK_28_BITS
@@ -46,7 +48,7 @@ class DESKeySchedule(IKeySchedule):
             C = self._rotate_left_28(C, self.SHIFTS[i])
             D = self._rotate_left_28(D, self.SHIFTS[i])
             CD = ((C << 28) | D).to_bytes(7, "big")
-            round_key = bitperm(CD, self.PC2, msb_first=True)
+            round_key = bitperm(CD, self.PC2, msb_first=True, one_based_indexing=True)
             round_keys.append(round_key)
         return round_keys
 
@@ -142,10 +144,12 @@ class DESRoundFunction(IRoundFunction):
             raise ValueError("Half block must be 4 bytes")
         if len(round_key) != 6:
             raise ValueError("Round key must be 6 bytes")
-        expanded = bitperm(half_block, self.EXPANSION, msb_first=True)
+        expanded = bitperm(
+            half_block, self.EXPANSION, msb_first=True, one_based_indexing=True
+        )
         xored = xor_bytes(expanded, round_key)
         substituted = self._apply_sboxes(xored)
-        result = bitperm(substituted, self.P, msb_first=True)
+        result = bitperm(substituted, self.P, msb_first=True, one_based_indexing=True)
         return result
 
     def _apply_sboxes(self, data: bytes) -> bytes:
@@ -213,13 +217,15 @@ class DES(FeistelCipher):
         """
         if len(block) != 8:
             raise ValueError("Block must be 8 bytes (64 bits)")
-        permuted = bitperm(block, self.IP, msb_first=True)
+        permuted = bitperm(block, self.IP, msb_first=True, one_based_indexing=True)
         feistel_output = super().encrypt_block(permuted)
         L16 = feistel_output[:4]
         R16 = feistel_output[4:]
         preoutput = R16 + L16
 
-        ciphertext = bitperm(preoutput, self.FP, msb_first=True)
+        ciphertext = bitperm(
+            preoutput, self.FP, msb_first=True, one_based_indexing=True
+        )
 
         return ciphertext
 
@@ -227,13 +233,13 @@ class DES(FeistelCipher):
         if len(block) != 8:
             raise ValueError("Block must be 8 bytes (64 bits)")
 
-        permuted = bitperm(block, self.IP, msb_first=True)
+        permuted = bitperm(block, self.IP, msb_first=True, one_based_indexing=True)
         feistel_output = super().decrypt_block(permuted)
 
         L16 = feistel_output[:4]
         R16 = feistel_output[4:]
         preoutput = R16 + L16
 
-        plaintext = bitperm(preoutput, self.FP, msb_first=True)
+        plaintext = bitperm(preoutput, self.FP, msb_first=True, one_based_indexing=True)
 
         return plaintext
