@@ -375,7 +375,7 @@ class SymmetricCipherContext:
         return unpad(b"".join(plaintext), bs, self.padding)
 
     def _encrypt_pcbc_file(self, fin, fout, chunk_size):
-        """Шифрование: C_i = E_K(P_i XOR P_{i-1} XOR C_{i-1}), P_{-1} = 0, C_0 = IV"""
+        """Шифрование: C_i = E_K(P_i XOR P_{i-1} XOR C_{i-1}), P_{0} = 0, C_0 = IV"""
         bs = self.block_size
         iv = self.iv if self.iv else secrets.token_bytes(bs)
         fout.write(iv)
