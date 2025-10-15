@@ -58,7 +58,7 @@ class DESKeySchedule(IKeySchedule):
 
 class DESRoundFunction(IRoundFunction):
     # fmt: off
-    EXPANSION = [
+    E = [
         32, 1, 2, 3, 4, 5,
         4, 5, 6, 7, 8, 9,
         8, 9, 10, 11, 12, 13,
@@ -145,7 +145,7 @@ class DESRoundFunction(IRoundFunction):
         if len(round_key) != 6:
             raise ValueError("Round key must be 6 bytes")
         expanded = bitperm(
-            half_block, self.EXPANSION, msb_first=True, one_based_indexing=True
+            half_block, self.E, msb_first=True, one_based_indexing=True
         )
         xored = xor_bytes(expanded, round_key)
         substituted = self._apply_sboxes(xored)
