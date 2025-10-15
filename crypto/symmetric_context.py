@@ -128,7 +128,7 @@ class SymmetricCipherContext:
                 case CipherMode.PCBC:
                     self._encrypt_pcbc_file(fin, fout, chunk_size)
                 case CipherMode.CFB:
-                    self._process_cfb_file(fin, fout, chunk_size, True)
+                    self._encrypt_cfb_file(fin, fout, chunk_size)
                 case CipherMode.OFB:
                     self._process_ofb_file(fin, fout, chunk_size, True)
                 case CipherMode.CTR:
@@ -150,7 +150,7 @@ class SymmetricCipherContext:
                 case CipherMode.PCBC:
                     self._decrypt_pcbc_file(fin, fout, chunk_size)
                 case CipherMode.CFB:
-                    self._process_cfb_file(fin, fout, chunk_size, False)
+                    self._decrypt_cfb_file(fin, fout, chunk_size)
                 case CipherMode.OFB:
                     self._process_ofb_file(fin, fout, chunk_size, False)
                 case CipherMode.CTR:
@@ -488,24 +488,44 @@ class SymmetricCipherContext:
 
         return unpad(b"".join(plaintext), bs, self.padding)
 
-    def _process_cfb_file(self, fin, fout, chunk_size, encrypt):
+    def _encrypt_cfb_file(self, fin, fout, chunk_size):
         """
         Шифрование: C_i = P_i XOR E_K(C_{i-1}), C_0 = IV
-        Дешифрование: P_i = C_i XOR E_K(C_{i-1})
         """
         bs = self.block_size
 
-        if encrypt:
-            iv = self.iv if self.iv else secrets.token_bytes(bs)
-            fout.write(iv)
-            prev_cipher = iv
-        else:
-            iv = fin.read(bs)
-            if len(iv) != bs:
-                raise ValueError("Ciphertext too short for CFB mode")
-            prev_cipher = iv
+        iv = self.iv if self.iv else secrets.token_bytes(bs)
+        fout.write(iv)
+        prev_cipher = iv
+        carry = b""
+
+        while True:
+            chunk = fin.read(chunk_size)
+            if not chunk:
+                break
+            data = carry + chunk
+            full_len = (len(data) // bs) * bs
+            full, carry = data[:full_len], data[full_len:]
+
+            for block in split_blocks(full, bs):
+                s = self.primitive.encrypt_block(prev_cipher)
+                output = xor_bytes(block, s)
+                fout.write(output)
+                prev_cipher = output
+
+        if carry:
+            s = self.primitive.encrypt_block(prev_cipher)
+            fout.write(xor_bytes(carry, s[: len(carry)]))
+
+    def _decrypt_cfb_file(self, fin, fout, chunk_size):
+        """Дешифрование: P_i = C_i XOR E_K(C_{i-1})"""
+        bs = self.block_size
+        iv = fin.read(bs)
+        if len(iv) != bs:
+            raise ValueError("Ciphertext too short for CFB mode")
 
         carry = b""
+        prev_cipher = iv
 
         while True:
             chunk = fin.read(chunk_size)
@@ -516,49 +536,89 @@ class SymmetricCipherContext:
             full_len = (len(data) // bs) * bs
             full, carry = data[:full_len], data[full_len:]
 
-            for block in split_blocks(full, bs):
-                s = self.primitive.encrypt_block(prev_cipher)
-                output = xor_bytes(block, s)
-                fout.write(output)
-                prev_cipher = output if encrypt else block
+            if full:
+                cipher_blocks = list(split_blocks(full, bs))
+
+                inputs = [prev_cipher] + cipher_blocks[:-1]
+                keystreams = list(self._executor.map(self._worker_encrypt, inputs))
+
+                plaintexts = [
+                    xor_bytes(c, ks) for c, ks in zip(cipher_blocks, keystreams)
+                ]
+                fout.write(b"".join(plaintexts))
+
+                prev_cipher = cipher_blocks[-1]
 
         if carry:
             s = self.primitive.encrypt_block(prev_cipher)
             fout.write(xor_bytes(carry, s[: len(carry)]))
 
-    def _process_cfb(self, data: bytes, encrypt: bool) -> bytes:
-        """
-        Шифрование: C_i = P_i XOR E_K(C_{i-1}), C_0 = IV
-        Дешифрование: P_i = C_i XOR E_K(C_{i-1})
-        """
+    def _encrypt_cfb(self, data: bytes) -> bytes:
+        """Шифрование: C_i = P_i XOR E_K(C_{i-1}), C_0 = IV"""
         bs = self.block_size
-
         iv = self.iv if self.iv else secrets.token_bytes(bs)
-        if not encrypt:
-            if len(data) < bs:
-                raise ValueError("Ciphertext too short for CFB mode")
-            iv = data[:bs]
-            data = data[bs:]
 
         full_blocks_count = len(data) // bs
-        full_data = data[: full_blocks_count * bs]
+        full_blocks = data[: full_blocks_count * bs]
         tail = data[full_blocks_count * bs :]
 
         prev_cipher = iv
-        output = []
+        output = [iv]
 
-        for block in split_blocks(full_data, bs):
+        for block in split_blocks(full_blocks, bs):
             s = self.primitive.encrypt_block(prev_cipher)
-            result = xor_bytes(block, s)
-            output.append(result)
-            prev_cipher = result if encrypt else block
+            cipher_block = xor_bytes(block, s)
+            output.append(cipher_block)
+            prev_cipher = cipher_block
 
         if tail:
             s = self.primitive.encrypt_block(prev_cipher)
-            output.append(xor_bytes(tail, s[: len(tail)]))
+            cipher_tail = xor_bytes(tail, s[: len(tail)])
+            output.append(cipher_tail)
 
-        result_data = b"".join(output)
-        return (iv + result_data) if encrypt else result_data
+        return b"".join(output)
+
+    def _decrypt_cfb(self, data: bytes) -> bytes:
+        """
+        P_i = C_i XOR E_K(C_{i-1})
+        """
+        bs = self.block_size
+
+        if len(data) < bs:
+            raise ValueError("Ciphertext too short for CFB mode")
+
+        iv = data[:bs]
+        ciphertext = data[bs:]
+
+        if not ciphertext:
+            return b""
+
+        full_blocks_count = len(ciphertext) // bs
+        full_blocks = ciphertext[: full_blocks_count * bs]
+        tail = ciphertext[full_blocks_count * bs :]
+
+        output = []
+
+        if full_blocks:
+            cipher_blocks = list(split_blocks(full_blocks, bs))
+
+            inputs = [iv] + cipher_blocks[:-1]
+
+            keystreams = list(self._executor.map(self._worker_encrypt, inputs))
+
+            plaintexts = [xor_bytes(c, ks) for c, ks in zip(cipher_blocks, keystreams)]
+            output.extend(plaintexts)
+
+            prev_cipher = cipher_blocks[-1]
+        else:
+            prev_cipher = iv
+
+        if tail:
+            s = self.primitive.encrypt_block(prev_cipher)
+            plain_tail = xor_bytes(tail, s[: len(tail)])
+            output.append(plain_tail)
+
+        return b"".join(output)
 
     def _process_ofb_file(self, fin, fout, chunk_size, encrypt):
         """
