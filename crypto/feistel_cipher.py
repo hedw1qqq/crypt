@@ -3,11 +3,13 @@ from utility import xor_bytes
 
 
 class FeistelCipher(ISymmetricCipher):
-    def __init__(self,
-                 key_schedule: IKeySchedule,
-                 round_function: IRoundFunction,
-                 block_size: int = 8,
-                 num_rounds: int = 16):
+    def __init__(
+        self,
+        key_schedule: IKeySchedule,
+        round_function: IRoundFunction,
+        block_size: int = 8,
+        num_rounds: int = 16,
+    ):
         if block_size % 2 != 0:
             raise ValueError("Block size must be even")
         self.key_schedule = key_schedule

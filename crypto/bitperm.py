@@ -1,8 +1,8 @@
 def bitperm(
-        data: bytes,
-        p_block: list[int],
-        msb_first: bool = True,
-        one_based_indexing: bool = True
+    data: bytes,
+    p_block: list[int],
+    msb_first: bool = True,
+    one_based_indexing: bool = True,
 ) -> bytes:
     total_bits = len(data) * 8
     result_integer = 0
@@ -28,10 +28,10 @@ def bitperm(
     padding = num_output_bytes * 8 - num_output_bits
     result_integer <<= padding
 
-    return result_integer.to_bytes(num_output_bytes, byteorder='big')
+    return result_integer.to_bytes(num_output_bytes, byteorder="big")
 
 
-data = b'\x07'  # 00000111
+data = b"\x07"  # 00000111
 p_block = [1, 7, 6, 5, 4, 3, 2, 1]
 
 result = bitperm(data, p_block, msb_first=True, one_based_indexing=True)

@@ -7,6 +7,7 @@ MASK_28_BITS = (1 << 28) - 1
 
 
 class DESKeySchedule(IKeySchedule):
+    # fmt: off
     PC1 = [
         57, 49, 41, 33, 25, 17, 9,
         1, 58, 50, 42, 34, 26, 18,
@@ -54,7 +55,7 @@ class DESKeySchedule(IKeySchedule):
 
 
 class DESRoundFunction(IRoundFunction):
-    # E
+    # fmt: off
     EXPANSION = [
         32, 1, 2, 3, 4, 5,
         4, 5, 6, 7, 8, 9,
@@ -134,7 +135,7 @@ class DESRoundFunction(IRoundFunction):
         19, 13, 30, 6,
         22, 11, 4, 25
     ]
-
+    # fmt: on
     def apply(self, half_block: bytes, round_key: bytes) -> bytes:
         """ f(R, K) = P(S(E(R) XOR K))."""
         if len(half_block) != 4:
@@ -167,7 +168,7 @@ class DESRoundFunction(IRoundFunction):
 
 
 class DES(FeistelCipher):
-    # IP
+    # fmt: off
     IP = [
         58, 50, 42, 34, 26, 18, 10, 2,
         60, 52, 44, 36, 28, 20, 12, 4,
@@ -190,7 +191,7 @@ class DES(FeistelCipher):
         34, 2, 42, 10, 50, 18, 58, 26,
         33, 1, 41, 9, 49, 17, 57, 25
     ]
-
+    #fmt: on
     def __init__(self):
         key_schedule = DESKeySchedule()
         round_function = DESRoundFunction()
