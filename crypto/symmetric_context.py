@@ -3,7 +3,7 @@ import os
 import secrets
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from typing import Optional, Tuple
 from modes import PaddingMode, CipherMode
 from utility import xor_bytes, split_blocks, pad, unpad
 
@@ -76,15 +76,15 @@ class SymmetricCipherContext:
             self._thread_local.primitive = prim
         return self._thread_local.primitive
 
-    def _worker_encrypt(self, block):
+    def _worker_encrypt(self, block: bytes):
         prim = self._get_thread_primitive()
         return prim.encrypt_block(block)
 
-    def _worker_decrypt(self, block):
+    def _worker_decrypt(self, block: bytes):
         prim = self._get_thread_primitive()
         return prim.decrypt_block(block)
 
-    def _worker_ctr(self, args):
+    def _worker_ctr(self, args: Tuple[bytes, int]):
         nonce, counter = args
         prim = self._get_thread_primitive()
         counter_bytes = counter.to_bytes(self.block_size // 2, "big")
