@@ -1,6 +1,6 @@
 import secrets
 
-from modes import PaddingMode
+from crypto.utility.modes import PaddingMode
 
 
 def pad(data: bytes, block_size: int, padding: PaddingMode) -> bytes:

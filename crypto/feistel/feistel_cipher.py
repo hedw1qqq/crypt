@@ -1,5 +1,6 @@
-from interfaces import ISymmetricCipher, IKeySchedule, IRoundFunction
-from utility import xor_bytes
+# feistel_cipher.py (ПРАВИЛЬНАЯ версия)
+from crypto.utility.interfaces import ISymmetricCipher, IKeySchedule, IRoundFunction
+from crypto.utility.utility import xor_bytes
 
 
 class FeistelCipher(ISymmetricCipher):
@@ -35,6 +36,7 @@ class FeistelCipher(ISymmetricCipher):
         half_size = self.block_size // 2
         L = block[:half_size]
         R = block[half_size:]
+
         for i in range(self.num_rounds):
             L_old = L
             L = R
@@ -44,13 +46,12 @@ class FeistelCipher(ISymmetricCipher):
     def decrypt_block(self, block: bytes) -> bytes:
         if len(block) != self.block_size:
             raise ValueError(f"Block size must be {self.block_size} bytes")
-        half_size = self.block_size // 2
-        L = block[:half_size]
-        R = block[half_size:]
+        half = self.block_size // 2
+        L, R = block[:half], block[half:]
 
         for i in range(self.num_rounds - 1, -1, -1):
-            L_old = L
-            L = R
-            R = xor_bytes(L_old, self.round_function.apply(L, self.round_keys[i]))
+            temp = L
+            L = xor_bytes(R, self.round_function.apply(L, self.round_keys[i]))
+            R = temp
 
         return L + R
