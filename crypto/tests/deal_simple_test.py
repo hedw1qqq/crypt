@@ -129,7 +129,7 @@ async def test_file_encryption(files):
             print(f"Файл {fname} не найден — пропуск.")
             continue
 
-        key_bytes = os.urandom(key // 8)
+        key_bytes = secrets.token_bytes(key // 8)
         file_name = os.path.basename(fname)
         file_size = os.path.getsize(fname)
 

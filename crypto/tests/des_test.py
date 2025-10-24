@@ -140,7 +140,7 @@ async def demo_comprehensive_test():
 
     await test_byte_sequences(key)
 
-    test_files = ["files/test.txt", "files/img.png", "files/IMG_1217.HEIC"]
+    test_files = ["../files/test.txt", "../files/img.png", "../files/IMG_1217.HEIC"]
 
     await test_file_encryption(test_files, key)
 
