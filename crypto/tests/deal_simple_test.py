@@ -94,8 +94,8 @@ async def test_deal_with_modes():
 
 
 async def test_file_encryption(files):
-    encrypted_dir = "../files/encrypted"
-    decrypted_dir = "../files/decrypted"
+    encrypted_dir = "C:\\Users\\ivglu\\Desktop\\crypt\\crypt\\crypto\\files\\encrypted"
+    decrypted_dir = "C:\\Users\\ivglu\\Desktop\\crypt\\crypt\\crypto\\files\\decrypted"
     os.makedirs("../files", exist_ok=True)
 
     print("\n" + "=" * 80)
@@ -184,4 +184,4 @@ async def test_file_encryption(files):
 if __name__ == "__main__":
     test_deal_basic()
     asyncio.run(test_deal_with_modes())
-    asyncio.run(test_file_encryption(["files/img.png", "files/IMG_1217.HEIC"]))
+    asyncio.run(test_file_encryption(["C:\\Users\\ivglu\\Desktop\\crypt\\crypt\\crypto\\files\\img.png"]))
