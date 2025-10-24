@@ -94,9 +94,9 @@ async def test_deal_with_modes():
 
 
 async def test_file_encryption(files):
-    encrypted_dir = "files/encrypted"
-    decrypted_dir = "files/decrypted"
-    os.makedirs("files", exist_ok=True)
+    encrypted_dir = "../files/encrypted"
+    decrypted_dir = "../files/decrypted"
+    os.makedirs("../files", exist_ok=True)
 
     print("\n" + "=" * 80)
     print("ТЕСТИРОВАНИЕ ШИФРОВАНИЯ ФАЙЛОВ")

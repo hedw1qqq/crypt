@@ -69,8 +69,8 @@ async def test_byte_sequences(key):
 
 async def test_file_encryption(files, key):
     des = DES()
-    encrypted_dir = "files/encrypted"
-    decrypted_dir = "files/decrypted"
+    encrypted_dir = "../files/encrypted"
+    decrypted_dir = "../files/decrypted"
 
     print("\n" + "=" * 80)
     print("ТЕСТИРОВАНИЕ ШИФРОВАНИЯ ФАЙЛОВ")
