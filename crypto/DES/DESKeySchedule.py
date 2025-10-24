@@ -58,16 +58,18 @@ class DESKeySchedule(IKeySchedule):
         if len(key_56) != 7:
             raise ValueError("Key must be exactly 7 bytes")
 
-        key_64 = bytearray()
+        key_int = int.from_bytes(key_56, "big")
 
-        bit_string = "".join(format(byte, "08b") for byte in key_56)
+        result = bytearray()
 
-        for i in range(0, 56, 7):
-            seven_bits = bit_string[i : i + 7]
-            ones_count = seven_bits.count("1")
-            parity_bit = "1" if ones_count % 2 == 0 else "0"
+        for i in range(8):
+            shift = 56 - (i + 1) * 7
+            seven_bits = (key_int >> shift) & 0b01111111
 
-            byte_with_parity = seven_bits + parity_bit
-            key_64.append(int(byte_with_parity, 2))
+            ones_count = bin(seven_bits).count("1")
+            parity_bit = 1 if ones_count % 2 == 0 else 0
 
-        return bytes(key_64)
+            byte_with_parity = (seven_bits << 1) | parity_bit
+            result.append(byte_with_parity)
+
+        return bytes(result)
