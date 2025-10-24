@@ -1,4 +1,3 @@
-# test_deal.py
 import asyncio
 import hashlib
 import os
@@ -9,7 +8,7 @@ from itertools import product
 from pathlib import Path
 
 from crypto.DEAL.deal_cipher import DEAL
-from crypto.utility.modes import CipherMode
+from crypto.utility.modes import CipherMode, PaddingMode
 from crypto.utility.symmetric_context import SymmetricCipherContext
 
 
@@ -93,6 +92,7 @@ async def test_deal_with_modes():
                 f"Зашифровано: {len(encrypted):3d} байт"
             )
 
+
 async def test_file_encryption(files):
     encrypted_dir = "files/encrypted"
     decrypted_dir = "files/decrypted"
@@ -102,7 +102,6 @@ async def test_file_encryption(files):
     print("ТЕСТИРОВАНИЕ ШИФРОВАНИЯ ФАЙЛОВ")
     print("=" * 80)
 
-    # Очищаем каталоги
     for directory in [encrypted_dir, decrypted_dir]:
         path = Path(directory)
         if path.exists():
@@ -119,7 +118,12 @@ async def test_file_encryption(files):
         CipherMode.RANDOM_DELTA,
     ]
     keys = [128, 192, 256]
-
+    paddings = [
+        PaddingMode.ZEROS,
+        PaddingMode.ANSI_X923,
+        PaddingMode.PKCS7,
+        PaddingMode.ISO_10126,
+    ]
     for fname, key in product(files, keys):
         if not os.path.exists(fname):
             print(f"Файл {fname} не найден — пропуск.")
@@ -133,9 +137,9 @@ async def test_file_encryption(files):
         print(f"Файл: {file_name} ({file_size:,} байт), ключ: {key} бит")
         print(f"{'═' * 80}")
 
-        for mode in modes:
+        for mode, pad in product(modes, paddings):
             deal = DEAL(key_size=key)
-            ctx = SymmetricCipherContext(deal, key_bytes, mode=mode)
+            ctx = SymmetricCipherContext(deal, key_bytes, mode=mode, padding=pad)
 
             encrypted_file = os.path.join(
                 encrypted_dir, f"{mode.name.lower()}_{key}_{file_name}"
@@ -144,17 +148,16 @@ async def test_file_encryption(files):
                 decrypted_dir, f"{mode.name.lower()}_{key}_decrypted_{file_name}"
             )
 
-            # Шифрование
             t1 = time.perf_counter()
             await ctx.encrypt_file(fname, encrypted_file, chunk_size=1024 * 1024)
             t_enc = time.perf_counter() - t1
 
-            # Дешифрование
             t2 = time.perf_counter()
-            await ctx.decrypt_file(encrypted_file, decrypted_file, chunk_size=1024 * 1024)
+            await ctx.decrypt_file(
+                encrypted_file, decrypted_file, chunk_size=1024 * 1024
+            )
             t_dec = time.perf_counter() - t2
 
-            # Проверка корректности
             with open(fname, "rb") as f_orig, open(decrypted_file, "rb") as f_decr:
                 original = f_orig.read()
                 decrypted = f_decr.read()
@@ -162,23 +165,20 @@ async def test_file_encryption(files):
             encrypted_size = os.path.getsize(encrypted_file)
 
             match = original == decrypted
-            encrypted_diff = original != open(encrypted_file, "rb").read()
             status = "✓ SUCCESS" if match else "✗ FAILED"
 
-
             print(
-                f"  {mode.name:15s}: {status:10s} | "
+                f"  {pad.name} | {mode.name:15s}: {status:10s} | "
                 f"Размер(зашифр): {encrypted_size:10,} | "
                 f"t_enc={t_enc:.3f}s t_dec={t_dec:.3f}s"
             )
 
             if not match:
-                print("   ⚠ Ошибка: файл после расшифровки не совпадает с исходным!")
+                print("    Ошибка: файл после расшифровки не совпадает с исходным!")
 
     print("\n" + "=" * 80)
     print("Тестирование завершено.")
     print("=" * 80)
-
 
 
 if __name__ == "__main__":

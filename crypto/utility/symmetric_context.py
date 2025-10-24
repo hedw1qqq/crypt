@@ -71,7 +71,11 @@ class SymmetricCipherContext:
 
     def _get_thread_primitive(self):
         if not hasattr(self._thread_local, "primitive"):
-            prim = self.primitive_class()
+            kwargs = {}
+            if hasattr(self.primitive, "key_size_bits"):
+                kwargs["key_size"] = self.primitive.key_size_bits
+
+            prim = self.primitive_class(**kwargs)
             prim.setup_keys(self.key)
             self._thread_local.primitive = prim
         return self._thread_local.primitive

@@ -4,6 +4,7 @@ from crypto.utility.utility import xor_bytes
 
 
 class DEALKeySchedule(IKeySchedule):
+    DEAL_CONSTANT_KEY = bytes.fromhex("1234567890abcdef")
 
     def __init__(self, key_size_bits: int = 128):
         if key_size_bits not in (128, 192, 256):
@@ -29,82 +30,79 @@ class DEALKeySchedule(IKeySchedule):
                 f"for {self.key_size_bits}-bit DEAL"
             )
 
-        key_blocks = [master_key[i:i+8] for i in range(0, len(master_key), 8)]
+        key_blocks = [master_key[i : i + 8] for i in range(0, len(master_key), 8)]
+        des = DES()
+        des.setup_keys(self.DEAL_CONSTANT_KEY)
 
-        def E(K: bytes, X: bytes) -> bytes:
-            des = DES()
-            des.setup_keys(K)
+        def E(X: bytes) -> bytes:
             return des.encrypt_block(X)
 
         rks: list[bytes] = []
 
         if self.key_size_bits == 128:
             K1, K2 = key_blocks
-            RK1 = E(K1, K1)
+            RK1 = E(K1)
             rks.append(RK1)
 
-            RK2 = E(K2, xor_bytes(K2, RK1))
+            RK2 = E(xor_bytes(K2, RK1))
             rks.append(RK2)
 
-            RK3 = E(K1, xor_bytes(xor_bytes(K1, self._make_bit_mask(1)), RK2))
+            RK3 = E(xor_bytes(xor_bytes(K1, self._make_bit_mask(1)), RK2))
             rks.append(RK3)
 
-            RK4 = E(K2, xor_bytes(xor_bytes(K2, self._make_bit_mask(2)), RK3))
+            RK4 = E(xor_bytes(xor_bytes(K2, self._make_bit_mask(2)), RK3))
             rks.append(RK4)
 
-            RK5 = E(K1, xor_bytes(xor_bytes(K1, self._make_bit_mask(4)), RK4))
+            RK5 = E(xor_bytes(xor_bytes(K1, self._make_bit_mask(4)), RK4))
             rks.append(RK5)
 
-            RK6 = E(K2, xor_bytes(xor_bytes(K2, self._make_bit_mask(8)), RK5))
+            RK6 = E(xor_bytes(xor_bytes(K2, self._make_bit_mask(8)), RK5))
             rks.append(RK6)
 
         elif self.key_size_bits == 192:
             K1, K2, K3 = key_blocks
-            RK1 = E(K1, K1)
+            RK1 = E(K1)
             rks.append(RK1)
 
-            RK2 = E(K2, xor_bytes(K2, RK1))
+            RK2 = E(xor_bytes(K2, RK1))
             rks.append(RK2)
 
-            RK3 = E(K1, xor_bytes(xor_bytes(K1, self._make_bit_mask(1)), RK2))
+            RK3 = E(xor_bytes(xor_bytes(K1, self._make_bit_mask(1)), RK2))
             rks.append(RK3)
 
-            RK4 = E(K2, xor_bytes(xor_bytes(K2, self._make_bit_mask(1)), RK3))
+            RK4 = E(xor_bytes(xor_bytes(K2, self._make_bit_mask(1)), RK3))
             rks.append(RK4)
 
-            RK5 = E(K1, xor_bytes(xor_bytes(K1, self._make_bit_mask(2)), RK4))
+            RK5 = E(xor_bytes(xor_bytes(K1, self._make_bit_mask(2)), RK4))
             rks.append(RK5)
 
-            RK6 = E(K3, xor_bytes(xor_bytes(K3, self._make_bit_mask(4)), RK5))
+            RK6 = E(xor_bytes(xor_bytes(K3, self._make_bit_mask(4)), RK5))
             rks.append(RK6)
 
         elif self.key_size_bits == 256:
             K1, K2, K3, K4 = key_blocks
-            RK1 = E(K1, K1)
+            RK1 = E(K1)
             rks.append(RK1)
 
-            RK2 = E(K2, xor_bytes(K2, RK1))
+            RK2 = E(xor_bytes(K2, RK1))
             rks.append(RK2)
 
-            RK3 = E(K3, xor_bytes(K3, RK2))
+            RK3 = E(xor_bytes(K3, RK2))
             rks.append(RK3)
 
-            RK4 = E(K4, xor_bytes(K4, RK3))
+            RK4 = E(xor_bytes(K4, RK3))
             rks.append(RK4)
 
-            RK5 = E(K1, xor_bytes(xor_bytes(K1, self._make_bit_mask(1)), RK4))
+            RK5 = E(xor_bytes(xor_bytes(K1, self._make_bit_mask(1)), RK4))
             rks.append(RK5)
 
-            RK6 = E(K2, xor_bytes(xor_bytes(K2, self._make_bit_mask(2)), RK5))
+            RK6 = E(xor_bytes(xor_bytes(K2, self._make_bit_mask(2)), RK5))
             rks.append(RK6)
 
-            RK7 = E(K3, xor_bytes(xor_bytes(K3, self._make_bit_mask(4)), RK6))
+            RK7 = E(xor_bytes(xor_bytes(K3, self._make_bit_mask(4)), RK6))
             rks.append(RK7)
 
-            RK8 = E(K4, xor_bytes(xor_bytes(K4, self._make_bit_mask(8)), RK7))
+            RK8 = E(xor_bytes(xor_bytes(K4, self._make_bit_mask(8)), RK7))
             rks.append(RK8)
-
-        else:
-            raise ValueError("Unsupported DEAL key size")
 
         return rks

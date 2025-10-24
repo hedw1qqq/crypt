@@ -4,12 +4,11 @@ from crypto.utility.modes import PaddingMode
 
 
 def pad(data: bytes, block_size: int, padding: PaddingMode) -> bytes:
-    if padding == PaddingMode.ZEROS:
-        pad_len = (block_size - (len(data) % block_size)) % block_size
-        return data + b"\0" * pad_len
     pad_len = block_size - (len(data) % block_size)
     if pad_len == 0:
-        pad_len = block_size
+        return data
+    if padding == PaddingMode.ZEROS:
+        return data + b"\0" * pad_len
     if padding == PaddingMode.PKCS7:
         return data + bytes([pad_len]) * pad_len
     if padding == PaddingMode.ANSI_X923:
