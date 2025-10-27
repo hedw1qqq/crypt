@@ -1,4 +1,3 @@
-# feistel_cipher.py (ПРАВИЛЬНАЯ версия)
 from crypto.utility.interfaces import ISymmetricCipher, IKeySchedule, IRoundFunction
 from crypto.utility.utility import xor_bytes
 

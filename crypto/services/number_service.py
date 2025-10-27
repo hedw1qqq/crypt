@@ -43,26 +43,19 @@ class NumberService:
 
     @staticmethod
     def extended_gcd(a: mpz, b: mpz) -> tuple[mpz, mpz, mpz]:
-        """:return (gcd, x, y) где ax + by = gcd(a, b)"""
-
         if b == 0:
-            return abs(a), mpz(1) if a >= 0 else mpz(-1), mpz(0)
+            return a, mpz(1), mpz(0)
 
-        sign_a = mpz(1) if a >= 0 else mpz(-1)
-        sign_b = mpz(1) if b >= 0 else mpz(-1)
-        a, b = abs(a), abs(b)
+        x0, x1 = mpz(1), mpz(0)
+        y0, y1 = mpz(0), mpz(1)
 
-        old_r, r = a, b
-        old_s, s = mpz(1), mpz(0)
-        old_t, t = mpz(0), mpz(1)
+        while b != 0:
+            q = a // b
+            a, b = b, a - q * b
+            x0, x1 = x1, x0 - q * x1
+            y0, y1 = y1, y0 - q * y1
 
-        while r != 0:
-            quotient = old_r // r
-            old_r, r = r, old_r - quotient * r
-            old_s, s = s, old_s - quotient * s
-            old_t, t = t, old_t - quotient * t
-
-        return old_r, old_s * sign_a, old_t * sign_b
+        return a, x0, y0
 
     @staticmethod
     def mod_pow(val: mpz, exp: mpz, mod: mpz) -> mpz:
