@@ -85,6 +85,7 @@ class DESRoundFunction(IRoundFunction):
         22, 11, 4, 25
     ]
     # fmt: on
+
     def apply(self, half_block: bytes, round_key: bytes) -> bytes:
         """f(R, K) = P(S(E(R) XOR K))."""
         if len(half_block) != 4:

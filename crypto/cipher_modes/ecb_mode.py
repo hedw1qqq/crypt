@@ -1,5 +1,4 @@
 
-import secrets
 from typing import BinaryIO
 from .base_mode import BaseCipherMode
 from crypto.utility.utility import pad, unpad, split_blocks

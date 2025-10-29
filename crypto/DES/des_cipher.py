@@ -1,9 +1,7 @@
 from crypto.DES.DESKeySchedule import DESKeySchedule
 from crypto.DES.DESRoundFunction import DESRoundFunction
-from crypto.utility.interfaces import IKeySchedule, IRoundFunction
 from crypto.feistel.feistel_cipher import FeistelCipher
 from crypto.utility.bitperm import bitperm
-from crypto.utility.utility import xor_bytes
 
 MASK_28_BITS = (1 << 28) - 1
 
@@ -33,6 +31,7 @@ class DES(FeistelCipher):
         33, 1, 41, 9, 49, 17, 57, 25
     ]
     # fmt: on
+
     def __init__(self):
         key_schedule = DESKeySchedule()
         round_function = DESRoundFunction()

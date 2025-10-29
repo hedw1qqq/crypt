@@ -1,5 +1,4 @@
 import unittest
-import time
 from gmpy2 import mpz, gcd as mpz_gcd
 from crypto.services.number_service import NumberService
 
@@ -211,7 +210,6 @@ class TestModPow(unittest.TestCase):
         print(f"  Вычисление на 256-битных числах")
         print(f"  Результат: {result}")
         self.assertTrue(0 <= result < mod)
-
 
 
 if __name__ == "__main__":
