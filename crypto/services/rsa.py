@@ -54,13 +54,41 @@ class RSA:
                 if self.test_prime.is_prime(cand, self.min_probability):
                     return cand
 
-        def _check_fermat_safe(self, p: mpz, q: mpz) -> bool: ...
+        def _check_fermat_safe(self, p: mpz, q: mpz) -> bool:
+            """
+            TODO: Implement Fermat factorization safety check.
+            Should verify that |p - q| is large enough to prevent Fermat attacks.
+            """
+            ...
 
-        def _check_wiener_safe(self, n: mpz, d: mpz) -> bool: ...
+        def _check_wiener_safe(self, n: mpz, d: mpz) -> bool:
+            """
+            TODO: Implement Wiener's attack safety check.
+            Should verify that d is large enough to prevent Wiener's attack.
+            Typically d should be > n^0.25.
+            """
+            ...
 
-        def _select_e_d(self, phi: mpz) -> Tuple[mpz, mpz]: ...
+        def _select_e_d(self, phi: mpz) -> Tuple[mpz, mpz]:
+            """
+            TODO: Implement selection of public exponent e and private exponent d.
+            Should compute d as the modular inverse of e modulo phi(n).
+            Must verify that gcd(e, phi) = 1.
+            """
+            ...
 
-        def generate(self) -> Tuple[mpz, mpz, mpz]: ...
+        def generate(self) -> Tuple[mpz, mpz, mpz]:
+            """
+            TODO: Implement RSA key generation.
+            Should:
+            1. Generate two distinct primes p and q
+            2. Compute n = p * q
+            3. Compute phi = (p-1) * (q-1)
+            4. Select e and d using _select_e_d
+            5. Verify safety using _check_fermat_safe and _check_wiener_safe
+            6. Return (n, e, d)
+            """
+            ...
 
     def __init__(
         self,
