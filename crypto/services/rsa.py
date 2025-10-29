@@ -13,7 +13,7 @@ class RSA:
     class PrimalityTest(Enum):
         FERMAT = 1
         SOLOVAY_STRASSEN = 2
-        MillerRabinTest = 3
+        MILLER_RABIN = 3
 
     class RSAGenerate:
         def __init__(
@@ -37,7 +37,7 @@ class RSA:
                 self.test_prime = FermatTest()
             elif test_enum == RSA.PrimalityTest.SOLOVAY_STRASSEN:
                 self.test_prime = SolovayStrassenTest()
-            elif test_enum == RSA.PrimalityTest.MillerRabinTest:
+            elif test_enum == RSA.PrimalityTest.MILLER_RABIN:
                 self.test_prime = MillerRabinTest()
             else:
                 raise ValueError("Unknown primality test")
