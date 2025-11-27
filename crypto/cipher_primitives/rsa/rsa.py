@@ -157,7 +157,6 @@ class RSA:
             raise ValueError("Message too large for RSA modulus")
         return int(NumberService.mod_pow(m_mpz, self.public_key.e, self.public_key.n))
 
-    # Аналог s.Decrypt(c) в Go
     def decrypt_int(self, c: int) -> int:
         c_mpz = mpz(c)
         return int(NumberService.mod_pow(c_mpz, self.private_key.d, self.private_key.n))
