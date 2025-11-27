@@ -1,5 +1,5 @@
 from crypto.utility.interfaces import IRoundFunction
-from crypto.DES.des_cipher import DES
+from crypto.cipher_primitives.DES.des_cipher import DES
 
 
 class DESAdapter(IRoundFunction):

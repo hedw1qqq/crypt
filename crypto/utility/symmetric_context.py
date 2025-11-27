@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 import threading
@@ -106,7 +105,8 @@ class SymmetricCipherContext:
             kwargs = {}
             if hasattr(self.primitive, "key_size_bits"):
                 kwargs["key_size"] = self.primitive.key_size_bits
-
+            if hasattr(self.primitive, "mode"):
+                kwargs["mode"] = self.primitive.mode
             prim = self.primitive_class(**kwargs)
             prim.setup_keys(self.key)
             self._thread_local.primitive = prim

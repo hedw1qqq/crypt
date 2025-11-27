@@ -1,9 +1,7 @@
-from crypto.DES.DESKeySchedule import DESKeySchedule
-from crypto.DES.DESRoundFunction import DESRoundFunction
-from crypto.utility.interfaces import IKeySchedule, IRoundFunction
+from crypto.cipher_primitives.DES.DESKeySchedule import DESKeySchedule
+from crypto.cipher_primitives.DES.DESRoundFunction import DESRoundFunction
 from crypto.feistel.feistel_cipher import FeistelCipher
 from crypto.utility.bitperm import bitperm
-from crypto.utility.utility import xor_bytes
 
 MASK_28_BITS = (1 << 28) - 1
 

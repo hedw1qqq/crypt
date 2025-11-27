@@ -1,4 +1,4 @@
-from crypto.DES.des_cipher import DES
+from crypto.cipher_primitives.DES.des_cipher import DES
 from crypto.utility.interfaces import IKeySchedule
 from crypto.utility.utility import xor_bytes
 

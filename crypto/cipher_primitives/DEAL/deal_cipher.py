@@ -1,5 +1,5 @@
-from crypto.DEAL.DEALKeySchedule import DEALKeySchedule
-from crypto.DEAL.deal_adapter import DESAdapter
+from crypto.cipher_primitives.DEAL.DEALKeySchedule import DEALKeySchedule
+from crypto.cipher_primitives.DEAL.deal_adapter import DESAdapter
 from crypto.feistel.feistel_cipher import FeistelCipher
 
 
