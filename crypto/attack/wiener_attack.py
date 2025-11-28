@@ -17,7 +17,15 @@ class WienerAttackResult:
 
 
 class WienerAttackService:
+
     def attack(self, n: mpz, e: mpz) -> WienerAttackResult:
+        """
+
+        e * d - k * ф(n) = 1
+        ф(n) = (ed-1) / k
+        e/ф(n) - k/d = 1/(d * ф(n))
+
+        """
         n = mpz(n)
         e = mpz(e)
 
@@ -33,17 +41,18 @@ class WienerAttackService:
                 continue
 
             phi_candidate = ed_minus_1 // k
-            # s = n - phi + 1, дискриминант: D = s^2 - 4n
+            # квадратное уравнение (x-p)(x-q) = x^2 - (p+q)x + pq
+            # p + q = n - ф(n) + 1
             s = n - phi_candidate + 1
             D = s * s - 4 * n
+
             if D < 0:
                 continue
-
-            if not isqrt(D):
+            t = isqrt(D)
+            if t * t != D:
                 continue
 
-            t = isqrt(D)
-            # Восстановить p, q и проверить корректность
+            # проверяем p, q
             p = (s + t) // 2
             q = (s - t) // 2
             if p <= 0 or q <= 0:
@@ -51,15 +60,13 @@ class WienerAttackService:
             if p * q != n:
                 continue
 
-            # Нашли корректные p, q => возвращаем d и phi
             return WienerAttackResult(mpz(d), mpz(phi_candidate), convs)
 
-        # Не удалось найти (не уязвим по Винеру)
         return WienerAttackResult(None, None, convs)
 
     def _continued_fraction(self, numerator: mpz, denominator: mpz) -> list[int]:
         """
-        Строит конечную цепную дробь для рационального числа numerator/denominator.
+        Строит конечную цепную дробь для рационального числ
         """
         a: list[int] = []
         n = mpz(numerator)
@@ -74,21 +81,20 @@ class WienerAttackService:
 
     def _convergents(self, cf: list[int]) -> List[Tuple[mpz, mpz]]:
         """
-        Генерирует все подходящие дроби p_i/q_i из коэффициентов цепной дроби.
+        Генерирует все подходящие дроби из коэффициентов цепной дроби.
         Возвращает список (k_i, d_i) == (p_i, q_i).
         """
         convs: List[Tuple[mpz, mpz]] = []
-        # Инициализация:
-        # p[-2]=0, p[-1]=1; q[-2]=1, q[-1]=0
+
         p_prev2, p_prev1 = mpz(0), mpz(1)
         q_prev2, q_prev1 = mpz(1), mpz(0)
 
         for a_i in cf:
             a = mpz(a_i)
-            p = a * p_prev1 + p_prev2
-            q = a * q_prev1 + q_prev2
-            convs.append((mpz(p), mpz(q)))
-            p_prev2, p_prev1 = p_prev1, p
-            q_prev2, q_prev1 = q_prev1, q
+            k = a * p_prev1 + p_prev2
+            d = a * q_prev1 + q_prev2
+            convs.append((mpz(k), mpz(d)))
+            p_prev2, p_prev1 = p_prev1, k
+            q_prev2, q_prev1 = q_prev1, d
 
         return convs
