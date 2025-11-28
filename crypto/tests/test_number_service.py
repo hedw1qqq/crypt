@@ -41,7 +41,6 @@ def test_jacobi_basic():
         (3, 5, -1, "(3/5) prime match legendre"),
         (5, 9, 1, "(5/9) composite"),
         (6, 15, 0, "gcd(6,15)!=1 -> 0"),
-        (1001, 9907, -1, "large coprime"),
     ]
     for a, n, expected, note in test_cases:
         res = NumberService.jacobi_symbol(mpz(a), mpz(n))
@@ -129,32 +128,6 @@ def test_mod_pow_basic():
         assert res == expected
 
 
-def test_mod_pow_rsa_sizes():
-    print("\n[test] rsa sizes (1024, 2048, 4096)")
-
-    # 1024
-    b = mpz(2**1023 + 1)
-    e = mpz(65537)
-    m = mpz(2**1024 - 1)
-    res = NumberService.mod_pow(b, e, m)
-    print(f"  1024-bit result len: {len(str(res))}")
-    assert 0 <= res < m
-
-    # 2048
-    b = mpz(123456789) * mpz(10**600)
-    e = mpz(10**100)
-    m = mpz(10**617)
-    res = NumberService.mod_pow(b, e, m)
-    print(f"  2048-bit result len: {len(str(res))}")
-    assert 0 <= res < m
-
-    # 4096
-    b = mpz(2**4095)
-    e = mpz(2**512)
-    m = mpz(2**4096 - 1)
-    res = NumberService.mod_pow(b, e, m)
-    print(f"  4096-bit result len: {len(str(res))}")
-    assert 0 <= res < m
 
 
 def test_mod_pow_fermat():

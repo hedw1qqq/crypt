@@ -17,19 +17,6 @@ class WienerAttackResult:
 
 
 class WienerAttackService:
-    """
-    Stateless-сервис атаки Винера.
-    Функционал:
-      - Построение цепной дроби e/n
-      - Генерация подходящих дробей (convergents) из цепной дроби
-      - Поиск приватного показателя d и φ(n) через проверку кандидатов k/d
-
-    Результат:
-      - d (если найдено) или None
-      - phi_n (если найдено) или None
-      - список всех подходящих дробей (k_i, d_i) для e/n
-    """
-
     def attack(self, n: mpz, e: mpz) -> WienerAttackResult:
         n = mpz(n)
         e = mpz(e)

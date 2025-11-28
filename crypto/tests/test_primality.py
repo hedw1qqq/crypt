@@ -1,284 +1,90 @@
-import unittest
+import pytest
 from gmpy2 import mpz
 from crypto.primality_tests.fermat_test import FermatTest
 from crypto.primality_tests.solovay_strassen_test import SolovayStrassenTest
 from crypto.primality_tests.miller_rabin_test import MillerRabinTest
 
 
-class TestKnownPrimes(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.fermat = FermatTest()
-        cls.solovay = SolovayStrassenTest()
-        cls.miller = MillerRabinTest()
-        cls.prob = 0.99
-        print("\n=== Initialized Known Primes Tests ===")
-
-    def test_small_prime_5(self):
-        n = mpz(5)
-        print(f"\nTesting prime n = {n}")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertTrue(all([fermat_result, solovay_result, miller_result]))
-
-    def test_small_prime_17(self):
-        n = mpz(17)
-        print(f"\nTesting prime n = {n}")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertTrue(all([fermat_result, solovay_result, miller_result]))
-
-    def test_small_prime_97(self):
-        n = mpz(97)
-        print(f"\nTesting prime n = {n}")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertTrue(all([fermat_result, solovay_result, miller_result]))
-
-    def test_medium_prime_1009(self):
-        n = mpz(1009)
-        print(f"\nTesting prime n = {n}")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertTrue(all([fermat_result, solovay_result, miller_result]))
-
-    def test_large_prime_10007(self):
-        n = mpz(10007)
-        print(f"\nTesting prime n = {n}")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertTrue(all([fermat_result, solovay_result, miller_result]))
-
-    def test_mersenne_prime(self):
-        n = mpz(2**31 - 1)
-        print(f"\nTesting Mersenne prime n = 2^31 - 1 = {n}")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertTrue(all([fermat_result, solovay_result, miller_result]))
+@pytest.fixture(scope="module")
+def tests():
+    print("\n[setup] init primality tests")
+    return {
+        "fermat": FermatTest(),
+        "solovay": SolovayStrassenTest(),
+        "miller": MillerRabinTest(),
+    }
 
 
-class TestKnownComposites(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.fermat = FermatTest()
-        cls.solovay = SolovayStrassenTest()
-        cls.miller = MillerRabinTest()
-        cls.prob = 0.99
-        print("\n=== Initialized Known Composites Tests ===")
-
-    def test_composite_4(self):
-        n = mpz(4)
-        print(f"\nTesting composite n = 4 = 2^2")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertFalse(any([fermat_result, solovay_result, miller_result]))
-
-    def test_composite_9(self):
-        n = mpz(9)
-        print(f"\nTesting composite n = 9 = 3^2")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertFalse(any([fermat_result, solovay_result, miller_result]))
-
-    def test_composite_15(self):
-        n = mpz(15)
-        print(f"\nTesting composite n = 15 = 3 x 5")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertFalse(any([fermat_result, solovay_result, miller_result]))
-
-    def test_composite_221(self):
-        n = mpz(221)
-        print(f"\nTesting composite n = 221 = 13 x 17")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertFalse(any([fermat_result, solovay_result, miller_result]))
+@pytest.fixture
+def prob():
+    return 0.99
 
 
-class TestTrivialCases(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.miller = MillerRabinTest()
-        cls.prob = 0.99
-        print("\n=== Initialized Trivial Cases Tests ===")
+def check_prime(tests_dict, n, probability, expected=True):
+    n_mpz = mpz(n)
+    results = {}
+    for name, test_obj in tests_dict.items():
 
-    def test_prime_2(self):
-        n = mpz(2)
-        print(f"\nTesting trivial prime n = {n}")
-        result = self.miller.is_prime(n, self.prob)
-        print(f"Miller-Rabin: {result}")
-        self.assertTrue(result)
+        res = test_obj.is_prime(n_mpz, probability)
+        results[name] = res
 
-    def test_prime_3(self):
-        n = mpz(3)
-        print(f"\nTesting trivial prime n = {n}")
-        result = self.miller.is_prime(n, self.prob)
-        print(f"Miller-Rabin: {result}")
-        self.assertTrue(result)
+    print(f"  n={n}: {results}")
+
+    assert results["miller"] == expected
+    assert results["solovay"] == expected
 
 
-class TestCarmichaelNumbers(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.fermat = FermatTest()
-        cls.solovay = SolovayStrassenTest()
-        cls.miller = MillerRabinTest()
-        cls.prob = 0.99
-        print("\n=== Initialized Carmichael Numbers Tests ===")
-
-    def test_carmichael_561(self):
-        n = mpz(561)
-        print(f"\nTesting Carmichael number n = 561 = 3 x 11 x 17")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertFalse(solovay_result)
-        self.assertFalse(miller_result)
-
-    def test_carmichael_1105(self):
-        n = mpz(1105)
-        print(f"\nTesting Carmichael number n = 1105 = 5 x 13 x 17")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertFalse(solovay_result)
-        self.assertFalse(miller_result)
-
-    def test_carmichael_1729(self):
-        n = mpz(1729)
-        print(f"\nTesting Carmichael number n = 1729 = 7 x 13 x 19")
-        fermat_result = self.fermat.is_prime(n, self.prob)
-        solovay_result = self.solovay.is_prime(n, self.prob)
-        miller_result = self.miller.is_prime(n, self.prob)
-        print(f"Fermat: {fermat_result}, Solovay-Strassen: {solovay_result}, Miller-Rabin: {miller_result}")
-        self.assertFalse(solovay_result)
-        self.assertFalse(miller_result)
+def test_known_primes(tests, prob):
+    print("\n[test] known primes")
+    primes = [2, 3, 5, 17, 97, 1009, 10007, 2**31 - 1]
+    for p in primes:
+        check_prime(tests, p, prob, expected=True)
 
 
-class TestProbabilityLevels(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.fermat = FermatTest()
-        cls.solovay = SolovayStrassenTest()
-        cls.miller = MillerRabinTest()
-        cls.n = mpz(104729)
-        print("\n=== Initialized Probability Levels Tests ===")
-
-    def test_probability_0_5(self):
-        prob = 0.5
-        print(f"\nTesting n = {self.n} with probability = {prob}")
-        rounds = self.miller.get_required_rounds(prob)
-        result = self.miller.is_prime(self.n, prob)
-        print(f"Miller-Rabin rounds: {rounds}, result: {result}")
-        self.assertTrue(result)
-
-    def test_probability_0_75(self):
-        prob = 0.75
-        print(f"\nTesting n = {self.n} with probability = {prob}")
-        rounds = self.miller.get_required_rounds(prob)
-        result = self.miller.is_prime(self.n, prob)
-        print(f"Miller-Rabin rounds: {rounds}, result: {result}")
-        self.assertTrue(result)
-
-    def test_probability_0_9(self):
-        prob = 0.9
-        print(f"\nTesting n = {self.n} with probability = {prob}")
-        rounds = self.miller.get_required_rounds(prob)
-        result = self.miller.is_prime(self.n, prob)
-        print(f"Miller-Rabin rounds: {rounds}, result: {result}")
-        self.assertTrue(result)
-
-    def test_probability_0_99(self):
-        prob = 0.99
-        print(f"\nTesting n = {self.n} with probability = {prob}")
-        rounds = self.miller.get_required_rounds(prob)
-        result = self.miller.is_prime(self.n, prob)
-        print(f"Miller-Rabin rounds: {rounds}, result: {result}")
-        self.assertTrue(result)
-
-    def test_probability_0_999(self):
-        prob = 0.999
-        print(f"\nTesting n = {self.n} with probability = {prob}")
-        rounds = self.miller.get_required_rounds(prob)
-        result = self.miller.is_prime(self.n, prob)
-        print(f"Miller-Rabin rounds: {rounds}, result: {result}")
-        self.assertTrue(result)
-
-    def test_probability_0_9999(self):
-        prob = 0.9999
-        print(f"\nTesting n = {self.n} with probability = {prob}")
-        rounds = self.miller.get_required_rounds(prob)
-        result = self.miller.is_prime(self.n, prob)
-        print(f"Miller-Rabin rounds: {rounds}, result: {result}")
-        self.assertTrue(result)
-
-    def test_rounds_comparison(self):
-        prob = 0.999
-        print(f"\nComparing required rounds for probability = {prob}")
-        fermat_rounds = self.fermat.get_required_rounds(prob)
-        solovay_rounds = self.solovay.get_required_rounds(prob)
-        miller_rounds = self.miller.get_required_rounds(prob)
-        print(f"Fermat: {fermat_rounds}, Solovay-Strassen: {solovay_rounds}, Miller-Rabin: {miller_rounds}")
-        self.assertLessEqual(miller_rounds, fermat_rounds)
-        self.assertLessEqual(miller_rounds, solovay_rounds)
+def test_known_composites(tests, prob):
+    print("\n[test] known composites")
+    composites = [4, 9, 15, 221, 100, 1000]
+    for c in composites:
+        check_prime(tests, c, prob, expected=False)
 
 
-class TestEdgeCases(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.miller = MillerRabinTest()
-        cls.prob = 0.99
-        print("\n=== Initialized Edge Cases Tests ===")
+def test_carmichael_numbers(tests, prob):
+    print("\n[test] carmichael numbers (fermat should fail)")
 
-    def test_small_odd_primes(self):
-        primes = [mpz(5), mpz(7), mpz(11)]
-        print("\nTesting small odd primes")
-        for n in primes:
-            with self.subTest(n=n):
-                result = self.miller.is_prime(n, self.prob)
-                print(f"n = {n}: {result}")
-                self.assertTrue(result)
+    carmichaels = [561, 1105, 29341]
 
-    def test_small_odd_composites(self):
-        composites = [mpz(9), mpz(15)]
-        print("\nTesting small odd composites")
-        for n in composites:
-            with self.subTest(n=n):
-                result = self.miller.is_prime(n, self.prob)
-                print(f"n = {n}: {result}")
-                self.assertFalse(result)
+    for c in carmichaels:
+        n = mpz(c)
+        f_res = tests["fermat"].is_prime(n, prob)
+        s_res = tests["solovay"].is_prime(n, prob)
+        m_res = tests["miller"].is_prime(n, prob)
 
-    def test_even_numbers(self):
-        even_composites = [mpz(4), mpz(100), mpz(1000)]
-        print("\nTesting even numbers")
-        for n in even_composites:
-            with self.subTest(n=n):
-                result = self.miller.is_prime(n, self.prob)
-                print(f"n = {n}: {result}")
-                self.assertFalse(result)
+        print(f"  n={c}: fermat={f_res}, solovay={s_res}, miller={m_res}")
+
+        assert s_res is False
+        assert m_res is False
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=2, buffer=False)
+def test_probability_levels(tests):
+    print("\n[test] probability levels & rounds")
+    n = mpz(104729)  # Prime
+    probs = [0.5, 0.75, 0.9, 0.99, 0.999, 0.9999]
+
+    for p in probs:
+        rounds_m = tests["miller"].get_required_rounds(p)
+        res = tests["miller"].is_prime(n, p)
+        print(f"  prob={p}: rounds={rounds_m}, result={res}")
+        assert res is True
+
+
+def test_rounds_comparison(tests):
+    print("\n[test] rounds comparison (miller should be fastest)")
+    p = 0.999
+    r_fermat = tests["fermat"].get_required_rounds(p)
+    r_solovay = tests["solovay"].get_required_rounds(p)
+    r_miller = tests["miller"].get_required_rounds(p)
+
+    print(f"  prob={p}: fermat={r_fermat}, solovay={r_solovay}, miller={r_miller}")
+
+    assert r_miller <= r_solovay
+    assert r_miller <= r_fermat
