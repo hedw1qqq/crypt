@@ -38,7 +38,7 @@ class BasePrimalityTest(IPrimalityTest, ABC):
             end = n - 2
         else:
             end = n - 1
-        bit_length = (n - 3).bit_length()
+        bit_length = (n - 1).bit_length()
         while True:
             a = mpz(secrets.randbits(bit_length))
             if 2 <= a <= end:
