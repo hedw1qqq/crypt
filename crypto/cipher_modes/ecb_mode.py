@@ -9,12 +9,11 @@ class ECBMode(BaseCipherMode):
     """ECB: C_i = E_K(P_i)"""
 
     def _worker_encrypt(self, block: bytes):
-        prim = self._get_thread_primitive()
-        return prim.encrypt_block(block)
+        return self.primitive.encrypt_block(block)
 
     def _worker_decrypt(self, block: bytes):
-        prim = self._get_thread_primitive()
-        return prim.decrypt_block(block)
+
+        return self.primitive.decrypt_block(block)
 
     def encrypt_bytes(self, data: bytes) -> bytes:
         bs = self.block_size

@@ -53,7 +53,6 @@ class SymmetricCipherContext:
         self._executor = ThreadPoolExecutor(
             max_workers=max_workers or (os.cpu_count() * 2)
         )
-        self._thread_local = threading.local()
 
         self._validate_iv()
 
@@ -69,7 +68,6 @@ class SymmetricCipherContext:
             padding=self.padding,
             iv=self.iv,
             executor=self._executor,
-            thread_local=self._thread_local,
         )
 
     def _validate_iv(self):
@@ -100,17 +98,6 @@ class SymmetricCipherContext:
         if hasattr(self, "_executor"):
             self._executor.shutdown(wait=True)
 
-    def _get_thread_primitive(self):
-        if not hasattr(self._thread_local, "primitive"):
-            kwargs = {}
-            if hasattr(self.primitive, "key_size_bits"):
-                kwargs["key_size"] = self.primitive.key_size_bits
-            if hasattr(self.primitive, "mode"):
-                kwargs["mode"] = self.primitive.mode
-            prim = self.primitive_class(**kwargs)
-            prim.setup_keys(self.key)
-            self._thread_local.primitive = prim
-        return self._thread_local.primitive
 
     async def encrypt_bytes(self, data: bytes) -> bytes:
         loop = asyncio.get_running_loop()

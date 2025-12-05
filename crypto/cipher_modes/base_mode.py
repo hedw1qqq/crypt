@@ -5,7 +5,7 @@ from typing import BinaryIO
 
 class BaseCipherMode(ABC):
 
-    def __init__(self, primitive, primitive_class, key, block_size, padding, iv, executor, thread_local):
+    def __init__(self, primitive, primitive_class, key, block_size, padding, iv, executor):
         self.primitive = primitive
         self.primitive_class = primitive_class
         self.key = key
@@ -13,19 +13,7 @@ class BaseCipherMode(ABC):
         self.padding = padding
         self.iv = iv
         self._executor = executor
-        self._thread_local = thread_local
 
-    def _get_thread_primitive(self):
-        if not hasattr(self._thread_local, "primitive"):
-            kwargs = {}
-            if hasattr(self.primitive, "key_size_bits"):
-                kwargs["key_size"] = self.primitive.key_size_bits
-            if hasattr(self.primitive, "mode"):
-                kwargs["mode"] = self.primitive.mode
-            prim = self.primitive_class(**kwargs)
-            prim.setup_keys(self.key)
-            self._thread_local.primitive = prim
-        return self._thread_local.primitive
 
     @abstractmethod
     def encrypt_bytes(self, data: bytes) -> bytes:

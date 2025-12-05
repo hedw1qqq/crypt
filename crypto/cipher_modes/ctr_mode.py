@@ -9,9 +9,8 @@ class CTRMode(BaseCipherMode):
 
     def _worker_ctr(self, args: Tuple[bytes, int]):
         nonce, counter = args
-        prim = self._get_thread_primitive()
         counter_bytes = counter.to_bytes(self.block_size // 2, "big")
-        return prim.encrypt_block(nonce + counter_bytes)
+        return self.primitive.encrypt_block(nonce + counter_bytes)
 
     def encrypt_bytes(self, data: bytes) -> bytes:
         bs = self.block_size

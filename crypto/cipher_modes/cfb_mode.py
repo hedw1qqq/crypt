@@ -8,8 +8,8 @@ class CFBMode(BaseCipherMode):
     """CFB: C_i = P_i XOR E_K(C_{i-1})"""
 
     def _worker_encrypt(self, block: bytes):
-        prim = self._get_thread_primitive()
-        return prim.encrypt_block(block)
+
+        return self.primitive.encrypt_block(block)
 
     def encrypt_bytes(self, data: bytes) -> bytes:
         bs = self.block_size

@@ -9,8 +9,8 @@ class PCBCMode(BaseCipherMode):
     """PCBC: C_i = E_K(P_i XOR P_{i-1} XOR C_{i-1})"""
 
     def _worker_decrypt(self, block: bytes):
-        prim = self._get_thread_primitive()
-        return prim.decrypt_block(block)
+
+        return self.primitive.decrypt_block(block)
 
     def encrypt_bytes(self, data: bytes) -> bytes:
         bs = self.block_size

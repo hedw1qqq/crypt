@@ -91,10 +91,10 @@ class WienerAttackService:
 
         for a_i in cf:
             a = mpz(a_i)
-            k = a * p_prev1 + p_prev2
-            d = a * q_prev1 + q_prev2
-            convs.append((mpz(k), mpz(d)))
-            p_prev2, p_prev1 = p_prev1, k
-            q_prev2, q_prev1 = q_prev1, d
+            p = a * p_prev1 + p_prev2
+            q = a * q_prev1 + q_prev2
+            convs.append((mpz(p), mpz(q)))
+            p_prev2, p_prev1 = p_prev1, p
+            q_prev2, q_prev1 = q_prev1, q
 
         return convs
