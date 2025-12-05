@@ -208,4 +208,4 @@ __marimo__/
 crypto/files/decrypted
 crypto/files/encrypted
 crypto/files/pseudorandom
-test_files/
+**/test_files/
