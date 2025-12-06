@@ -1,7 +1,6 @@
 from crypto.cipher_primitives.rijndael.sbox import SBox
 from crypto.cipher_primitives.rijndael.rijndael_key_schedule import (
     RijndaelKeyScheduler,
-    calculate_num_rounds,
 )
 from crypto.cipher_primitives.rijndael.rijndael_round_func import (
     sub_bytes,
@@ -13,6 +12,13 @@ from crypto.utility.interfaces import ISymmetricCipher
 
 
 class RijndaelCipher(ISymmetricCipher):
+    @staticmethod
+    def _calculate_num_rounds(block_size: int, key_size: int) -> int:
+        nb = block_size // 4
+        nk = key_size // 4
+        max_nk_nb = max(nk, nb)
+        return max_nk_nb + 6
+
     def __init__(
         self, block_size: int, key_size: int, mod_poly: int = 0x11B, mode=None
     ):
@@ -25,7 +31,9 @@ class RijndaelCipher(ISymmetricCipher):
         self.key_size = key_size
         self.mod_poly = mod_poly
 
-        self.num_rounds = calculate_num_rounds(block_size, key_size)
+        self.num_rounds = RijndaelCipher._calculate_num_rounds(
+            self.block_size, self.key_size
+        )
 
         self.round_keys = None
         self.sbox = None
@@ -57,7 +65,7 @@ class RijndaelCipher(ISymmetricCipher):
 
         nb = self.block_size // 4
 
-        # bytes -> state (column-major)
+        # bytes -> state
         state = [bytearray(nb) for _ in range(4)]
         for i in range(4):
             for j in range(nb):
