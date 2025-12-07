@@ -31,4 +31,4 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pytest --asyncio-mode=auto
+        pytest -s --asyncio-mode=auto
