@@ -15,21 +15,30 @@ class SBox:
         self._inverse = bytearray(256)
 
         for i in range(256):
-            val = i
-            inv_val = 0 if val == 0 else GField.inverse(val, self.mod_poly)
 
-            # Аффинное преобразование
-            result = inv_val
-            result ^= ((inv_val << 1) | (inv_val >> 7)) & 0xFF
-            result ^= ((inv_val << 2) | (inv_val >> 6)) & 0xFF
-            result ^= ((inv_val << 3) | (inv_val >> 5)) & 0xFF
-            result ^= ((inv_val << 4) | (inv_val >> 4)) & 0xFF
-            result ^= 0x63
+            b = 0 if i == 0 else GField.inverse(i, self.mod_poly)
 
-            self._forward[i] = result
+            s = b
+            s ^= ((b << 1) | (b >> 7)) & 0xFF
+            s ^= ((b << 2) | (b >> 6)) & 0xFF
+            s ^= ((b << 3) | (b >> 5)) & 0xFF
+            s ^= ((b << 4) | (b >> 4)) & 0xFF
+            s ^= 0x63
 
-        for i in range(256):
-            self._inverse[self._forward[i]] = i
+            self._forward[i] = s
+
+        for s in range(256):
+
+            val = s
+
+            b = ((val << 1) | (val >> 7)) & 0xFF
+            b ^= ((val << 3) | (val >> 5)) & 0xFF
+            b ^= ((val << 6) | (val >> 2)) & 0xFF
+            b ^= 0x05
+
+            inv_b = 0 if b == 0 else GField.inverse(b, self.mod_poly)
+
+            self._inverse[s] = inv_b
 
     def sub(self, val: int) -> int:
         self._initialize()
