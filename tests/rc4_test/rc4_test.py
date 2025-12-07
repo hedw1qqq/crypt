@@ -5,11 +5,10 @@ import shutil
 import time
 import pytest
 
-# Предполагаем, что RC4 реализует интерфейс, совместимый с вашим контекстом
-# или тестируется напрямую как Stream Cipher.
+
 from crypto.cipher_primitives.RC4.rc4_cipher import RC4
 from crypto.utility.modes import CipherMode, PaddingMode
-# Если RC4 не работает с контекстом, уберем этот импорт, но судя по запросу вы хотите "как в DES"
+
 from crypto.utility.symmetric_context import SymmetricCipherContext
 
 
@@ -20,7 +19,6 @@ DECRYPTED_DIR = os.path.join(TEST_FILES_DIR, "decrypted")
 
 
 def reset_dir(path: str) -> None:
-    """Очищает и пересоздает директорию."""
     try:
         shutil.rmtree(path, ignore_errors=True)
         os.makedirs(path, exist_ok=True)
@@ -29,7 +27,6 @@ def reset_dir(path: str) -> None:
 
 
 def hex_dump(data, max_len=32):
-    """Красивый вывод байтов в HEX."""
     hex_str = data[:max_len].hex()
     formatted = " ".join(hex_str[i : i + 2] for i in range(0, len(hex_str), 2))
     if len(data) > max_len:
@@ -39,7 +36,6 @@ def hex_dump(data, max_len=32):
 
 @pytest.fixture(scope="function")
 def clean_test_dirs():
-    """Создает чистые директории для вывода перед тестом."""
     reset_dir(ENCRYPTED_DIR)
     reset_dir(DECRYPTED_DIR)
     yield
@@ -67,7 +63,7 @@ def user_files(test_files_dir):
     if not existing_files:
         print(f"\n[setup] No files found in {test_files_dir}, generating defaults...")
         defaults = {
-            "rc4_test_image.bin": secrets.token_bytes(1024 * 50), # 50 KB
+            "rc4_test_image.bin": secrets.token_bytes(1024 * 50),
             "rc4_test_text.txt": b"RC4 stream cipher verification file.\n" * 500,
         }
         generated = []
@@ -88,7 +84,7 @@ def test_rc4_raw_primitive():
 
     key = b"Key"
     plaintext = b"Plaintext"
-    expected = bytes.fromhex("bbf316e8d940af0ad3") # Wiki vector
+    expected = bytes.fromhex("bbf316e8d940af0ad3")
 
     rc4 = RC4()
     rc4.setup_keys(key)
@@ -96,13 +92,11 @@ def test_rc4_raw_primitive():
     print(f" Key:   {hex_dump(key)}")
     print(f" Input: {hex_dump(plaintext)}")
 
-    # RC4 encrypt/decrypt is symmetric (XOR)
     ciphertext = rc4.encrypt(plaintext)
     print(f" Cipher:{hex_dump(ciphertext)}")
 
     assert ciphertext == expected, f"Vector mismatch! Got {ciphertext.hex()}"
 
-    # Re-init for decrypt
     rc4_dec = RC4()
     rc4_dec.setup_keys(key)
     decrypted = rc4_dec.decrypt(ciphertext)
@@ -120,11 +114,6 @@ async def test_rc4_memory_stream():
     RC4 не использует Padding и Block Modes в классическом понимании,
     поэтому тестируем его "напрямую" или через контекст, если он поддерживает stream ciphers.
     """
-    # Если SymmetricCipherContext поддерживает потоковые шифры (Stream Mode),
-    # можно использовать его. Иначе тестируем напрямую класс RC4.
-
-    # Предположим, мы тестируем напрямую класс RC4, так как режимы (CBC/ECB)
-    # для него не имеют смысла (он сам генерирует поток).
 
     print(f"\n--- [RC4 | Stream Mode] ---")
 
@@ -134,12 +123,10 @@ async def test_rc4_memory_stream():
     for length in lengths:
         data = secrets.token_bytes(length)
 
-        # Шифрование
         cipher_enc = RC4()
         cipher_enc.setup_keys(key)
-        encrypted = cipher_enc.encrypt(data) # Обычный синхронный вызов
+        encrypted = cipher_enc.encrypt(data)
 
-        # Дешифрование
         cipher_dec = RC4()
         cipher_dec.setup_keys(key)
         decrypted = cipher_dec.decrypt(encrypted)
@@ -160,7 +147,7 @@ async def test_rc4_file_encryption(clean_test_dirs, user_files):
     """
     Тест шифрования файлов для RC4.
     """
-    # RC4 обычно не требует IV, но ключ обязателен.
+
     key = secrets.token_bytes(16)
 
     for f_path in user_files:
@@ -174,33 +161,30 @@ async def test_rc4_file_encryption(clean_test_dirs, user_files):
         dec_path = os.path.join(DECRYPTED_DIR, f"RC4_{f_name}")
 
         try:
-            # === Шифрование ===
+
             t0 = time.perf_counter()
 
-            # Читаем и шифруем потоком (имитация, если нет async контекста)
-            # В реальном приложении лучше использовать асинхронный контекст, если он есть.
             with open(f_path, "rb") as fin, open(enc_path, "wb") as fout:
                 cipher = RC4()
                 cipher.setup_keys(key)
 
-                chunk_size = 64 * 1024 # 64KB
+                chunk_size = 64 * 1024
                 while True:
                     chunk = fin.read(chunk_size)
                     if not chunk:
                         break
-                    fout.write(cipher.encrypt(chunk)) # RC4 сохраняет состояние
+                    fout.write(cipher.encrypt(chunk))
 
             t_enc = time.perf_counter() - t0
             enc_size = os.path.getsize(enc_path)
             speed_enc = (f_size / 1024 / 1024) / t_enc if t_enc > 0 else 0
             print(f" Encrypt: {t_enc:.4f}s ({speed_enc:.2f} MB/s) -> {enc_size} bytes")
 
-            # === Дешифрование ===
             t1 = time.perf_counter()
 
             with open(enc_path, "rb") as fin, open(dec_path, "wb") as fout:
                 cipher = RC4()
-                cipher.setup_keys(key) # Сброс состояния (новый ключ)
+                cipher.setup_keys(key)
 
                 while True:
                     chunk = fin.read(chunk_size)
@@ -212,7 +196,6 @@ async def test_rc4_file_encryption(clean_test_dirs, user_files):
             speed_dec = (f_size / 1024 / 1024) / t_dec if t_dec > 0 else 0
             print(f" Decrypt: {t_dec:.4f}s ({speed_dec:.2f} MB/s)")
 
-            # === Проверка ===
             if not os.path.exists(dec_path):
                 raise FileNotFoundError("Decrypted file missing")
 
@@ -221,7 +204,6 @@ async def test_rc4_file_encryption(clean_test_dirs, user_files):
                     f"Size mismatch: {os.path.getsize(dec_path)} != {f_size}"
                 )
 
-            # Побайтовое сравнение
             with open(f_path, "rb") as f1, open(dec_path, "rb") as f2:
                 while True:
                     b1 = f1.read(chunk_size)

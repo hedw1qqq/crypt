@@ -38,9 +38,15 @@ def hex_dump(data, max_len=32):
 
 @pytest.fixture(scope="function")
 def clean_test_dirs():
-    """Создает чистые директории для вывода перед тестом."""
-    reset_dir(ENCRYPTED_DIR)
-    reset_dir(DECRYPTED_DIR)
+
+    if os.path.exists(ENCRYPTED_DIR):
+        shutil.rmtree(ENCRYPTED_DIR)
+    os.makedirs(ENCRYPTED_DIR, exist_ok=True)
+
+    if os.path.exists(DECRYPTED_DIR):
+        shutil.rmtree(DECRYPTED_DIR)
+    os.makedirs(DECRYPTED_DIR, exist_ok=True)
+
     yield
 
 
