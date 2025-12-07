@@ -19,7 +19,6 @@ DECRYPTED_DIR = os.path.join(TEST_FILES_DIR, "decrypted")
 
 
 def reset_dir(path: str) -> None:
-    """Очищает и пересоздает директорию."""
     try:
         shutil.rmtree(path, ignore_errors=True)
         os.makedirs(path, exist_ok=True)
@@ -28,7 +27,6 @@ def reset_dir(path: str) -> None:
 
 
 def hex_dump(data, max_len=32):
-    """Красивый вывод байтов в HEX."""
     hex_str = data[:max_len].hex()
     formatted = " ".join(hex_str[i : i + 2] for i in range(0, len(hex_str), 2))
     if len(data) > max_len:
@@ -38,31 +36,19 @@ def hex_dump(data, max_len=32):
 
 @pytest.fixture(scope="function")
 def clean_test_dirs():
-
-    if os.path.exists(ENCRYPTED_DIR):
-        shutil.rmtree(ENCRYPTED_DIR)
-    os.makedirs(ENCRYPTED_DIR, exist_ok=True)
-
-    if os.path.exists(DECRYPTED_DIR):
-        shutil.rmtree(DECRYPTED_DIR)
-    os.makedirs(DECRYPTED_DIR, exist_ok=True)
-
+    reset_dir(ENCRYPTED_DIR)
+    reset_dir(DECRYPTED_DIR)
     yield
 
 
 @pytest.fixture(scope="session")
 def test_files_dir():
-    """Гарантирует, что папка test_files существует."""
     os.makedirs(TEST_FILES_DIR, exist_ok=True)
     return TEST_FILES_DIR
 
 
 @pytest.fixture(scope="module")
 def user_files(test_files_dir):
-    """
-    Ищет файлы пользователя в папке test_files.
-    Если папка пуста, создает пару тестовых файлов.
-    """
     existing_files = [
         os.path.join(test_files_dir, f)
         for f in os.listdir(test_files_dir)
@@ -96,7 +82,6 @@ def user_files(test_files_dir):
     ],
 )
 def test_aes_raw_primitive(key_len, expected_name):
-    """Тест 'сырого' блочного шифрования (один блок 16 байт)."""
     print(f"\n--- [{expected_name}] Raw Block Test ---")
 
     key = secrets.token_bytes(key_len)
@@ -136,9 +121,6 @@ def test_aes_raw_primitive(key_len, expected_name):
     "padding", [PaddingMode.PKCS7, PaddingMode.ISO_10126, PaddingMode.ANSI_X923]
 )
 async def test_aes_memory_full_matrix(key_len, mode, padding):
-    """
-    Проверяет ВСЕ комбинации: (AES-128/192/256) x (Mode) x (Padding).
-    """
     aes_name = f"AES-{key_len*8}"
     header = f"[{aes_name} | {mode.name} | {padding.name}]"
     print(f"\n--- {header} ---")
@@ -183,10 +165,7 @@ async def test_aes_memory_full_matrix(key_len, mode, padding):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("key_len", [16, 24, 32])
 @pytest.mark.parametrize("mode", [CipherMode.CBC, CipherMode.CTR])
-async def test_user_files_encryption_parametrized(key_len, mode, user_files):
-    """
-    Параметризованный тест файлов: проверяет каждый файл для каждого ключа и режима.
-    """
+async def test_user_files_encryption_parametrized(clean_test_dirs, key_len, mode, user_files):
     aes_name = f"AES-{key_len*8}"
     key = secrets.token_bytes(key_len)
 
@@ -212,7 +191,6 @@ async def test_user_files_encryption_parametrized(key_len, mode, user_files):
         dec_path = os.path.join(DECRYPTED_DIR, f"{aes_name}_{mode.name}_{f_name}")
 
         try:
-
             t0 = time.perf_counter()
             await ctx.encrypt_file(f_path, enc_path)
             t_enc = time.perf_counter() - t0
