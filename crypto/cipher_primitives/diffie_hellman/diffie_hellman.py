@@ -58,7 +58,7 @@ class DiffieHellman:
         self.g = g
 
     def generate_keys(self) -> mpz:
-        """Шаг 2: Генерация приватного и публичного ключей."""
+        """ Генерация приватного и публичного ключей."""
         if self.p == 0:
             raise ValueError("Параметры p и g не установлены.")
 

@@ -86,8 +86,8 @@ def test_rc4_raw_primitive():
     plaintext = b"Plaintext"
     expected = bytes.fromhex("bbf316e8d940af0ad3")
 
-    rc4 = RC4()
-    rc4.setup_keys(key)
+    rc4 = RC4(key)
+    rc4.setup_keys()
 
     print(f" Key:   {hex_dump(key)}")
     print(f" Input: {hex_dump(plaintext)}")
@@ -97,8 +97,8 @@ def test_rc4_raw_primitive():
 
     assert ciphertext == expected, f"Vector mismatch! Got {ciphertext.hex()}"
 
-    rc4_dec = RC4()
-    rc4_dec.setup_keys(key)
+    rc4_dec = RC4(key)
+    rc4_dec.setup_keys()
     decrypted = rc4_dec.decrypt(ciphertext)
 
     print(f" Decr:  {hex_dump(decrypted)}")
@@ -123,12 +123,12 @@ async def test_rc4_memory_stream():
     for length in lengths:
         data = secrets.token_bytes(length)
 
-        cipher_enc = RC4()
-        cipher_enc.setup_keys(key)
+        cipher_enc = RC4(key)
+        cipher_enc.setup_keys()
         encrypted = cipher_enc.encrypt(data)
 
-        cipher_dec = RC4()
-        cipher_dec.setup_keys(key)
+        cipher_dec = RC4(key)
+        cipher_dec.setup_keys()
         decrypted = cipher_dec.decrypt(encrypted)
 
         print(
@@ -165,8 +165,8 @@ async def test_rc4_file_encryption(clean_test_dirs, user_files):
             t0 = time.perf_counter()
 
             with open(f_path, "rb") as fin, open(enc_path, "wb") as fout:
-                cipher = RC4()
-                cipher.setup_keys(key)
+                cipher = RC4(key)
+                cipher.setup_keys()
 
                 chunk_size = 64 * 1024
                 while True:
@@ -183,8 +183,8 @@ async def test_rc4_file_encryption(clean_test_dirs, user_files):
             t1 = time.perf_counter()
 
             with open(enc_path, "rb") as fin, open(dec_path, "wb") as fout:
-                cipher = RC4()
-                cipher.setup_keys(key)
+                cipher = RC4(key)
+                cipher.setup_keys()
 
                 while True:
                     chunk = fin.read(chunk_size)
